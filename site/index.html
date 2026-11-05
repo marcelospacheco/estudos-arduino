@@ -1,0 +1,1657 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratório Embarcados</title>
+<style>
+  :root {
+    --bg: #eef1f5; --panel: #ffffff; --soft: #f4f7fa; --ink: #172033; --muted: #5d6a7e; --line: #dbe1ea;
+    --accent: #0f8b8d; --accent-ink: #ffffff; --current: #f59e0b;
+    --warn: #b54708; --bad: #b42318; --good: #067647; --wire: #9aa5b5;
+    --shadow: 0 1px 2px rgba(23,32,51,.06), 0 8px 24px rgba(23,32,51,.06);
+    --hero-a: #dff4f2; --hero-b: #eef1f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0c1118; --panel: #151c27; --soft: #1b2432; --ink: #e7edf6; --muted: #92a0b5; --line: #263143;
+      --accent: #34d1c6; --accent-ink: #06211f; --warn: #f79009; --bad: #f97066; --good: #47cd89; --wire: #55637a;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+      --hero-a: #123238; --hero-b: #0c1118;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c1118; --panel: #151c27; --soft: #1b2432; --ink: #e7edf6; --muted: #92a0b5; --line: #263143;
+    --accent: #34d1c6; --accent-ink: #06211f; --warn: #f79009; --bad: #f97066; --good: #47cd89; --wire: #55637a;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+    --hero-a: #123238; --hero-b: #0c1118;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 system-ui, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+  code { font: 0.9em ui-monospace, Consolas, monospace; background: var(--soft); border: 1px solid var(--line); padding: 1px 6px; border-radius: 6px; }
+  button, select, input { font: inherit; color: inherit; }
+
+  /* topo */
+  header { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 22px; background: color-mix(in srgb, var(--panel) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo { width: 36px; height: 36px; border-radius: 10px; background: #0b6e75; display: grid; place-items: center; box-shadow: var(--shadow); }
+  .logo i { width: 10px; height: 10px; border-radius: 50%; background: #ff5a4f; box-shadow: 0 0 10px 3px #ff5a4f; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: .15; box-shadow: none; } }
+  .brand b { display: block; font-size: 16px; letter-spacing: -.01em; line-height: 1.15; }
+  .brand small { color: var(--muted); font-size: 12px; }
+  .btn { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 7px 14px; cursor: pointer; transition: border-color .15s, transform .05s; }
+  .btn:hover { border-color: var(--accent); }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+
+  .layout { display: grid; grid-template-columns: 270px 1fr; min-height: calc(100vh - 57px); }
+
+  /* menu em trilha */
+  nav { border-right: 1px solid var(--line); padding: 18px 14px; background: var(--panel); }
+  nav h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin: 0 0 10px 8px; }
+  .step { display: flex; gap: 12px; align-items: flex-start; width: 100%; text-align: left; background: none; border: 1px solid transparent; border-radius: 12px; padding: 8px; cursor: pointer; color: inherit; }
+  .step:hover { background: var(--soft); }
+  .step.active { background: var(--soft); border-color: var(--accent); }
+  .dot { position: relative; flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font: 600 12px ui-monospace, Consolas, monospace; border: 2px solid var(--line); background: var(--panel); color: var(--muted); }
+  .step.done .dot { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .step:not(:last-child) .dot::after { content: ""; position: absolute; top: 100%; left: calc(50% - 1px); width: 2px; height: 24px; background: var(--line); }
+  .step.done:not(:last-child) .dot::after { background: var(--accent); }
+  .info { min-width: 0; }
+  .info b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .info small { color: var(--muted); font-size: 12px; display: block; }
+
+  main { padding: 22px; max-width: 1180px; width: 100%; }
+
+  /* herói */
+  .hero { border: 1px solid var(--line); border-radius: 18px; padding: 22px 24px; margin-bottom: 18px; background: linear-gradient(135deg, var(--hero-a), var(--hero-b)); box-shadow: var(--shadow); }
+  .hero-top { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+  .num { font: 700 13px ui-monospace, Consolas, monospace; color: var(--accent); }
+  .hero h2 { margin: 0 0 4px; font-size: 30px; letter-spacing: -.02em; line-height: 1.15; }
+  .hero p { margin: 0 0 14px; color: var(--muted); max-width: 70ch; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-size: 12px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); }
+  .chip.board { color: #fff; border: 0; font-weight: 600; }
+  .chip.uno { background: #0b6e75; } .chip.pico { background: #c51a4a; } .chip.esp { background: #2563eb; }
+  .chip.concept { color: var(--ink); background: color-mix(in srgb, var(--accent) 12%, var(--panel)); border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); font-family: ui-monospace, Consolas, monospace; }
+
+  .grid { display: grid; grid-template-columns: minmax(280px, 360px) 1fr; gap: 18px; align-items: start; }
+  .grid > *, .layout > * { min-width: 0; }
+  .layout { grid-template-columns: 270px minmax(0, 1fr); }
+  .sticky { position: sticky; top: 76px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-bottom: 18px; box-shadow: var(--shadow); }
+  .card h3 { margin: 0 0 12px; font-size: 12px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+  /* controles */
+  .field { margin-bottom: 16px; }
+  .field label { display: flex; justify-content: space-between; align-items: baseline; font-weight: 600; margin-bottom: 6px; }
+  .field label .val { font: 600 13px ui-monospace, Consolas, monospace; color: var(--accent); background: var(--soft); padding: 1px 8px; border-radius: 6px; }
+  .field .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .field select { width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--soft); }
+  .field select:focus, input:focus-visible, .btn:focus-visible, .tab:focus-visible, .step:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .check { display: flex; gap: 8px; align-items: center; }
+  input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); }
+
+  /* cálculos */
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .stat { background: var(--soft); border-radius: 12px; padding: 10px 12px; border-left: 3px solid var(--accent); }
+  .stat b { display: block; font: 700 19px ui-monospace, Consolas, monospace; letter-spacing: -.02em; }
+  .stat span { font-size: 12px; color: var(--muted); }
+  .meter { position: relative; height: 12px; border-radius: 999px; overflow: hidden; display: flex; margin-top: 6px; }
+  .meter i { display: block; height: 100%; }
+  .z-low { background: #f59e0b; } .z-ok { background: #22c55e; } .z-hi { background: #ef4444; }
+  .needle-wrap { position: relative; height: 14px; }
+  .needle { position: absolute; top: 2px; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 10px solid var(--ink); transform: translateX(-7px); transition: left .25s; }
+  .ticks { position: relative; height: 16px; font: 11px ui-monospace, Consolas, monospace; color: var(--muted); }
+  .ticks span { position: absolute; transform: translateX(-50%); }
+  .alert { margin-top: 12px; padding: 10px 12px; border-radius: 12px; font-size: 14px; border: 1px solid; }
+  .alert.good { color: var(--good); border-color: var(--good); background: color-mix(in srgb, var(--good) 8%, var(--panel)); }
+  .alert.warn { color: var(--warn); border-color: var(--warn); background: color-mix(in srgb, var(--warn) 8%, var(--panel)); }
+  .alert.bad { color: var(--bad); border-color: var(--bad); background: color-mix(in srgb, var(--bad) 8%, var(--panel)); }
+
+  /* circuito */
+  .stage { background: var(--soft); border-radius: 12px; padding: 6px; }
+  svg { width: 100%; height: auto; display: block; }
+  svg text { fill: var(--ink); font: 12px system-ui, sans-serif; }
+  svg .on-board { fill: #e8fffd; font-weight: 600; }
+  svg .pin-n { font-size: 9px; fill: #bfeeea; }
+  svg .pin-n.sel { fill: #fbbf24; font-weight: 700; }
+  svg .mut { fill: var(--muted); }
+  .wire { fill: none; stroke: var(--wire); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+  .wire.flow { stroke: var(--current); stroke-width: 4; stroke-dasharray: 3 11; animation: flow .45s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset: -14; } }
+  .statebar { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .pill { font: 600 12px ui-monospace, Consolas, monospace; padding: 3px 10px; border-radius: 999px; background: var(--soft); border: 1px solid var(--line); }
+  .pill.high { color: #92400e; background: #fef3c7; border-color: #f59e0b; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pill.high { color: #fcd34d; background: #3a2a07; } }
+  :root[data-theme="dark"] .pill.high { color: #fcd34d; background: #3a2a07; }
+
+  /* terminal */
+  .term { border-radius: 12px; overflow: hidden; border: 1px solid #263143; background: #0b0f16; }
+  .term-bar { display: flex; align-items: center; gap: 6px; padding: 7px 12px; background: #151c27; color: #8b97ab; font: 12px ui-monospace, Consolas, monospace; }
+  .term-bar i { width: 10px; height: 10px; border-radius: 50%; background: #ff5f57; } .term-bar i:nth-child(2) { background: #febc2e; } .term-bar i:nth-child(3) { background: #28c840; }
+  .term-bar span { margin-left: 8px; }
+  .serial { color: #8fe3a3; font: 13px/1.5 ui-monospace, Consolas, monospace; padding: 10px 12px; height: 140px; overflow: auto; white-space: pre; }
+  .serial em { color: #5f6c82; font-style: normal; }
+
+  /* código */
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .tab { border: 1px solid var(--line); background: var(--soft); border-radius: 10px 10px 0 0; padding: 6px 12px; cursor: pointer; font: 13px ui-monospace, Consolas, monospace; color: var(--muted); }
+  .tab.active { background: #0f1722; color: #e6eef9; border-color: #0f1722; }
+  pre { margin: 0; background: #0f1722; color: #d6e2f0; border-radius: 0 12px 12px 12px; padding: 16px; overflow: auto; max-height: 420px; font: 13px/1.6 ui-monospace, Consolas, monospace; tab-size: 2; }
+  .t-com { color: #6b7a90; font-style: italic; } .t-str { color: #a5e075; } .t-pre { color: #c792ea; }
+  .t-kw { color: #ff9f6e; } .t-fn { color: #6cb6ff; } .t-num { color: #f9c859; } .t-key { color: #6cb6ff; }
+  .actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+  .ok-msg { color: var(--good); font-size: 13px; }
+  .note { color: var(--muted); font-size: 13px; margin: 12px 0 0; }
+
+  /* estudo */
+  ul.clean { margin: 0; padding: 0; list-style: none; }
+  ul.clean li { position: relative; padding: 8px 0 8px 26px; border-top: 1px solid var(--line); }
+  ul.clean li:first-child { border-top: 0; }
+  ul.clean li::before { content: "▸"; position: absolute; left: 6px; color: var(--accent); }
+  details { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; margin-bottom: 8px; background: var(--soft); }
+  summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; color: var(--accent); font-weight: 700; }
+  details[open] summary::after { content: "–"; }
+  details p { margin: 8px 0 0; color: var(--muted); }
+  .pending { text-align: center; color: var(--muted); padding: 48px 12px; }
+  .pending .big { font-size: 40px; }
+
+  .tag { font: 600 10px system-ui, sans-serif; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0 6px; margin-left: 4px; vertical-align: 1px; }
+  .statebar { flex-wrap: wrap; }
+  .mutetxt { color: var(--muted); font-size: 13px; }
+  .pill.bad { color: var(--bad); border-color: var(--bad); }
+  .wire.flow.blue { stroke: #60a5fa; }
+  .btn.primary { touch-action: manipulation; user-select: none; }
+  a.btn { text-decoration: none; color: inherit; display: inline-block; }
+  a.btn.primary { color: var(--accent-ink); }
+  .brand { text-decoration: none; color: inherit; }
+  nav .navh { margin: 16px 0 6px 8px; }
+  .step.plain .dot::after { display: none !important; }
+  .dot.b-uno { background: #0b6e75; border-color: #0b6e75; color: #fff; }
+  .dot.b-pico { background: #c51a4a; border-color: #c51a4a; color: #fff; }
+  .dot.b-esp { background: #2563eb; border-color: #2563eb; color: #fff; }
+
+  .hero.big { padding: 34px 30px; }
+  .hero.big h2 { font-size: 36px; max-width: 22ch; }
+  .hero.big p { font-size: 17px; max-width: 62ch; }
+  .cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+  .cta .btn { padding: 10px 18px; font-size: 15px; }
+  .hero.board { display: grid; grid-template-columns: 1fr minmax(240px, 340px); gap: 20px; align-items: center; }
+  .hero-art svg { max-height: 200px; }
+  .crumb { font-size: 13px; color: var(--muted); text-decoration: none; }
+  .crumb:hover { color: var(--accent); }
+  h3.sec { font-size: 22px; letter-spacing: -.01em; margin: 34px 0 6px; scroll-margin-top: 76px; }
+  .lead { color: var(--muted); margin: 0 0 16px; max-width: 70ch; }
+
+  .bcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 18px; }
+  .bcard { display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; text-decoration: none; color: inherit; box-shadow: var(--shadow); transition: transform .12s, border-color .12s; }
+  .bcard:hover { transform: translateY(-3px); border-color: var(--accent); }
+  .bart { background: var(--soft); padding: 14px 18px 4px; }
+  .bbody { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .bbody h3 { margin: 4px 0 0; font-size: 18px; letter-spacing: -.01em; line-height: 1.25; }
+  .bbody p { margin: 0; color: var(--muted); font-size: 14px; }
+  .bbody .chip.board { align-self: flex-start; padding: 2px 12px; }
+  .more { margin-top: auto; padding-top: 8px; color: var(--accent); font-weight: 600; font-size: 14px; }
+
+  .tblwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); box-shadow: var(--shadow); }
+  .tbl { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14px; }
+  .tbl th, .tbl td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .tbl thead th { background: var(--soft); font-size: 13px; }
+  .tbl tbody th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+  .tbl tbody tr:last-child th, .tbl tbody tr:last-child td { border-bottom: 0; }
+  .tbl td:nth-child(2) { border-left: 1px solid var(--line); }
+
+  .flow { display: flex; align-items: stretch; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .fstep { flex: 1 1 200px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow); }
+  .fstep b { display: block; margin-bottom: 4px; }
+  .fstep span { color: var(--muted); font-size: 14px; }
+  .farrow { align-self: center; font-size: 22px; color: var(--accent); }
+
+  .trail { display: flex; flex-direction: column; gap: 8px; }
+  .trow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; text-decoration: none; color: inherit; }
+  .card .trow { background: var(--soft); }
+  .trow:hover { border-color: var(--accent); }
+  .trow .num { font: 700 14px ui-monospace, Consolas, monospace; color: var(--accent); min-width: 24px; }
+  .trow .ttl { flex: 1 1 220px; min-width: 0; }
+  .trow .ttl b { display: block; }
+  .trow .ttl small { color: var(--muted); font-size: 13px; }
+  .badge { font-size: 11px; border-radius: 999px; padding: 1px 9px; border: 1px solid var(--line); color: var(--muted); }
+  .badge.ok { color: var(--good); border-color: var(--good); }
+  .badge.criado { color: var(--warn); border-color: var(--warn); }
+
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+  .prose { margin: 0 0 12px; max-width: 78ch; }
+  .prose:last-child { margin-bottom: 0; }
+  dl.specs { display: grid; grid-template-columns: minmax(120px, 38%) 1fr; margin: 0; }
+  dl.specs dt, dl.specs dd { margin: 0; padding: 8px 0; border-top: 1px solid var(--line); }
+  dl.specs dt:first-of-type, dl.specs dt:first-of-type + dd { border-top: 0; }
+  dl.specs dt { color: var(--muted); font-size: 14px; padding-right: 10px; }
+  dl.specs dd { font-weight: 500; }
+  .callout { border-left: 4px solid var(--warn); }
+  ul.clean.warn li::before { content: "!"; font-weight: 800; color: var(--warn); }
+  ul.clean.good li::before { content: "+"; font-weight: 800; color: var(--good); }
+  ul.clean.bad li::before { content: "–"; font-weight: 800; color: var(--bad); }
+  .blk { margin-bottom: 14px; }
+  .blk:last-child { margin-bottom: 0; }
+  .blkhead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 8px; }
+  .blk pre { border-radius: 12px; max-height: 220px; }
+  @media (max-width: 900px) {
+    nav .navh { display: none; }
+    .hero.board { grid-template-columns: 1fr; }
+    .hero.big h2 { font-size: 28px; }
+    .farrow { display: none; }
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    nav { border-right: 0; border-bottom: 1px solid var(--line); }
+    #menu { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
+    .step { flex: none; width: auto; min-width: 150px; }
+    .step .dot::after { display: none !important; }
+    .grid { grid-template-columns: minmax(0, 1fr); }
+    .sticky { position: static; }
+    main { padding: 16px; }
+    .hero h2 { font-size: 24px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .logo i, .wire.flow { animation: none; } }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="#/" title="Página inicial"><div class="logo"><i></i></div><div><b>Laboratório Embarcados</b><small>Arduino · Pico · ESP32 simulados no Wokwi</small></div></a>
+  <button class="btn" id="themeBtn" title="Alternar tema claro/escuro">◐ Tema</button>
+</header>
+<div class="layout">
+  <nav><div id="menu"></div></nav>
+  <main id="view"></main>
+</div>
+
+<script>
+/* ======================================================================
+   Para adicionar um projeto novo: inclua um objeto em PROJECTS.
+   Campos: id, slug (nome da pasta), title, board, status ('ok' | 'pendente'),
+   summary, concepts[], e (se interativo) params[], defaults, derive(p),
+   files(p), draw(p, on, d), wave(p, d), experiments[], quiz[].
+   ====================================================================== */
+
+const LED_COLORS = {
+  red:    { label: 'vermelho', vf: 2.0, css: '#ff3b30' },
+  green:  { label: 'verde',    vf: 2.1, css: '#22c55e' },
+  yellow: { label: 'amarelo',  vf: 2.1, css: '#facc15' },
+  blue:   { label: 'azul',     vf: 3.0, css: '#3b82f6' },
+  white:  { label: 'branco',   vf: 3.0, css: '#e5e9f2' }
+};
+const RESISTORS = [10, 47, 100, 220, 330, 470, 1000, 4700, 10000, 100000];
+const BAND_COLORS = ['#111', '#7b4a1e', '#d92b2b', '#f57c1f', '#f2d21b', '#2f9e44', '#2b6fd9', '#8b3fc4', '#8c8c8c', '#f5f5f5'];
+const fmtOhm = r => r >= 1000 ? (r / 1000).toString().replace('.', ',') + ' kΩ' : r + ' Ω';
+const ohmAscii = r => r >= 1000 ? (r / 1000) + " kohms" : r + " ohms";
+const VCC = 5;
+const DIGITAL_PINS = [13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2];
+
+function bands(r) {
+  const s = String(r);
+  const d1 = Number(s[0]), d2 = Number(s[1] || 0), mult = Math.max(0, s.length - 2);
+  return [d1, d2, mult];
+}
+
+const PWM_PINS = [3, 5, 6, 9, 10, 11];
+/* Converte a leitura do ADC (0-1023) em PWM (0-255), igual ao código gerado. */
+function pwmFor(curve, adc) {
+  return curve === 'gamma' ? Math.floor(Math.pow(adc / 1023, 2.2) * 255 + 0.5) : Math.floor(adc * 255 / 1023);
+}
+
+const PROJECTS = [
+  {
+    id: '01', slug: '01-blink-uno', title: 'LED piscando', board: 'Arduino Uno', boardClass: 'uno', status: 'ok',
+    summary: 'Controle de uma saída digital e o circuito básico de um LED com resistor limitador.',
+    concepts: ['pinMode()', 'digitalWrite()', 'delay() × millis()', 'Lei de Ohm', 'Resistor limitador'],
+    params: [
+      { key: 'pin',      label: 'Pino do LED',   type: 'select', options: [2,3,4,5,6,7,8,9,10,11,12,13].map(n => ({ v: n, t: 'D' + n })),
+        hint: 'D0 e D1 são da Serial; evite-os. O D13 também liga o LED interno da placa.' },
+      { key: 'interval', label: 'Intervalo',      type: 'range', min: 20, max: 2000, step: 10, unit: ' ms',
+        hint: 'Tempo ligado e tempo desligado. O período total é o dobro.' },
+      { key: 'resistor', label: 'Resistor',      type: 'select', options: RESISTORS.map(r => ({ v: r, t: fmtOhm(r) })) },
+      { key: 'color',    label: 'Cor do LED',    type: 'select', options: Object.entries(LED_COLORS).map(([k, c]) => ({ v: k, t: c.label[0].toUpperCase() + c.label.slice(1) + ' (Vf ≈ ' + c.vf + ' V)' })) },
+      { key: 'mode',     label: 'Estratégia de tempo', type: 'select', options: [{ v: 'delay', t: 'delay() — bloqueante' }, { v: 'millis', t: 'millis() — não bloqueante' }],
+        hint: 'Com millis() o loop() continua livre para ler botões (projeto 02).' },
+      { key: 'serial',   label: 'Imprimir no Serial', type: 'check' }
+    ],
+    defaults: { pin: 13, interval: 500, resistor: 220, color: 'red', mode: 'delay', serial: true },
+
+    derive(p) {
+      const c = LED_COLORS[p.color];
+      const i = Math.max(0, (VCC - c.vf) / p.resistor * 1000); // mA
+      const period = p.interval * 2;
+      let level = 'good', msg = 'Corrente na faixa segura (≈ 5 a 20 mA).';
+      if (i > 40)      { level = 'bad';  msg = 'Acima de 40 mA: excede o limite absoluto do pino do Uno e queima o LED. Aumente o resistor.'; }
+      else if (i > 20) { level = 'warn'; msg = 'Acima de 20 mA: passa do recomendado para um LED comum. Aumente o resistor.'; }
+      else if (i < 1)  { level = 'warn'; msg = 'Menos de 1 mA: o LED quase não acende. Diminua o resistor.'; }
+      else if (i < 5)  { level = 'warn'; msg = 'Corrente baixa: o LED acende, mas fraco.'; }
+      if (p.interval < 40) { msg += ' Com intervalo tão curto o olho vê o LED praticamente aceso o tempo todo.'; if (level === 'good') level = 'warn'; }
+      const freq = 1000 / period;
+      return { i, freq, period, power: i * VCC, level, msg, brightness: i < 0.2 ? 0 : Math.min(1, 0.15 + i / 15),
+        stats: [[i.toFixed(1) + ' mA', 'corrente no LED'], [freq.toFixed(freq < 10 ? 2 : 1) + ' Hz', 'frequência'], [period + ' ms', 'período completo'], [(i * VCC).toFixed(0) + ' mW', 'potência fornecida']] };
+    },
+
+    files(p) {
+      const withSerial = p.serial;
+      const logOn  = withSerial ? '\n  Serial.println("LED ligado");' : '';
+      const logOff = withSerial ? '\n  Serial.println("LED desligado");' : '';
+      const setupSerial = withSerial ? '\n  Serial.begin(9600);\n  Serial.println("Blink iniciado!");' : '';
+      let main;
+      if (p.mode === 'delay') {
+        main = `#include <Arduino.h>
+
+// Projeto 01 - Blink externo (Arduino Uno)
+// LED no pino D${p.pin} via resistor de ${ohmAscii(p.resistor)}.
+
+const uint8_t PINO_LED = ${p.pin};
+const unsigned long INTERVALO_MS = ${p.interval};
+
+void setup() {
+  pinMode(PINO_LED, OUTPUT);${setupSerial}
+}
+
+void loop() {
+  digitalWrite(PINO_LED, HIGH);${logOn}
+  delay(INTERVALO_MS);
+
+  digitalWrite(PINO_LED, LOW);${logOff}
+  delay(INTERVALO_MS);
+}
+`;
+      } else {
+        main = `#include <Arduino.h>
+
+// Projeto 01 - Blink sem delay() (Arduino Uno)
+// LED no pino D${p.pin} via resistor de ${ohmAscii(p.resistor)}.
+
+const uint8_t PINO_LED = ${p.pin};
+const unsigned long INTERVALO_MS = ${p.interval};
+
+unsigned long ultimaTroca = 0;
+bool ledLigado = false;
+
+void setup() {
+  pinMode(PINO_LED, OUTPUT);${setupSerial}
+}
+
+void loop() {
+  unsigned long agora = millis();
+
+  if (agora - ultimaTroca >= INTERVALO_MS) {
+    ultimaTroca = agora;
+    ledLigado = !ledLigado;
+    digitalWrite(PINO_LED, ledLigado);${withSerial ? '\n    Serial.println(ledLigado ? "LED ligado" : "LED desligado");' : ''}
+  }
+
+  // Aqui o loop() continua livre para outras tarefas.
+}
+`;
+      }
+      const diagram = {
+        version: 1, author: 'Estudos Arduino', editor: 'wokwi',
+        parts: [
+          { type: 'wokwi-arduino-uno', id: 'uno', top: 0, left: 0, attrs: {} },
+          { type: 'wokwi-led', id: 'led1', top: -90, left: 160, attrs: { color: p.color } },
+          { type: 'wokwi-resistor', id: 'r1', top: -30, left: 120, rotate: 90, attrs: { value: String(p.resistor) } }
+        ],
+        connections: [
+          ['uno:' + p.pin, 'r1:1', 'green', ['v-20', 'h0']],
+          ['r1:2', 'led1:A', 'green', ['h0']],
+          ['led1:C', 'uno:GND.1', 'black', ['v0']]
+        ],
+        dependencies: {}
+      };
+      return [
+        { name: 'src/main.cpp', lang: 'cpp', text: main },
+        { name: 'diagram.json', lang: 'json', text: JSON.stringify(diagram, null, 2) + '\n' },
+        { name: 'platformio.ini', lang: 'ini', text: '[env:uno]\nplatform = atmelavr\nboard = uno\nframework = arduino\nmonitor_speed = 9600\n' },
+        { name: 'wokwi.toml', lang: 'toml', text: "[wokwi]\nversion = 1\nfirmware = '.pio/build/uno/firmware.hex'\nelf = '.pio/build/uno/firmware.elf'\n" }
+      ];
+    },
+
+    /* esquema: placa Uno, resistor com faixas de cor e LED com brilho */
+    draw(p, on, d) {
+      const c = LED_COLORS[p.color];
+      const glow = on ? d.brightness : 0;
+      const px = 60 + DIGITAL_PINS.indexOf(p.pin) * 22;
+      const [b1, b2, bm] = bands(p.resistor);
+      const pinsSvg = DIGITAL_PINS.map((n, i) => {
+        const x = 60 + i * 22, sel = n === p.pin;
+        return `<rect x="${x - 4}" y="${sel ? 106 : 108}" width="8" height="${sel ? 12 : 8}" rx="1.5" fill="${sel ? '#fbbf24' : '#d9b44a'}"/>
+                <text x="${x}" y="136" text-anchor="middle" class="pin-n${sel ? ' sel' : ''}">${n}</text>`;
+      }).join('');
+      const w1 = `M${px} 108 V40 H400`, w2 = 'M480 40 H520 V170 H562', w3 = 'M578 170 V290 H150 V259';
+      const wires = [w1, w2, w3].map(w => `<path class="wire" d="${w}"/>`).join('') +
+                    (on ? [w1, w2, w3].map(w => `<path class="wire flow" d="${w}"/>`).join('') : '');
+      const bodyOp = on ? 0.55 + 0.45 * glow : 0.28;
+      return `
+<svg viewBox="0 0 640 310" role="img" aria-label="Esquema: pino D${p.pin}, resistor de ${fmtOhm(p.resistor)}, LED ${c.label}, retorno ao GND">
+  <defs><filter id="blur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="10"/></filter></defs>
+  <!-- placa -->
+  <rect x="20" y="120" width="310" height="130" rx="12" fill="#0b6e75"/>
+  <rect x="8" y="140" width="38" height="46" rx="3" fill="#b9c2cf"/><rect x="14" y="146" width="26" height="34" rx="2" fill="#8d97a6"/>
+  <rect x="8" y="200" width="38" height="36" rx="3" fill="#1b1f27"/>
+  <rect x="196" y="160" width="110" height="36" rx="3" fill="#161a22"/>
+  <text x="251" y="182" text-anchor="middle" style="fill:#9fb0c6;font-size:10px;font-family:ui-monospace,Consolas,monospace">ATmega328P</text>
+  <circle cx="76" cy="160" r="10" fill="#c93c3c" stroke="#e8e8e8" stroke-width="2"/>
+  <text x="130" y="222" text-anchor="middle" class="on-board" style="font-size:15px;letter-spacing:.08em">ARDUINO UNO</text>
+  <rect x="48" y="102" width="270" height="22" rx="3" fill="#101419"/>${pinsSvg}
+  <rect x="130" y="244" width="70" height="18" rx="3" fill="#101419"/>
+  <rect x="146" y="251" width="8" height="8" rx="1.5" fill="#d9b44a"/><rect x="168" y="251" width="8" height="8" rx="1.5" fill="#d9b44a"/>
+  <text x="150" y="238" text-anchor="middle" class="pin-n">GND</text>
+  <!-- fios -->
+  ${wires}
+  <!-- resistor com faixas -->
+  <rect x="404" y="28" width="72" height="24" rx="11" fill="#e3c99a"/>
+  <rect x="418" y="28" width="7" height="24" fill="${BAND_COLORS[b1]}"/><rect x="432" y="28" width="7" height="24" fill="${BAND_COLORS[b2]}"/>
+  <rect x="446" y="28" width="7" height="24" fill="${BAND_COLORS[bm]}"/><rect x="462" y="28" width="6" height="24" fill="#c9a227"/>
+  <text x="440" y="74" text-anchor="middle" style="font-weight:700">${fmtOhm(p.resistor)}</text>
+  <!-- LED -->
+  ${glow > 0 ? `<circle cx="570" cy="100" r="${26 + glow * 30}" fill="${c.css}" opacity="${0.25 + glow * 0.55}" filter="url(#blur)"/>` : ''}
+  <path d="M548 130 V100 a22 22 0 0 1 44 0 V130 Z" fill="${c.css}" fill-opacity="${bodyOp}" stroke="var(--ink)" stroke-opacity=".55" stroke-width="2"/>
+  <rect x="543" y="130" width="54" height="6" rx="2" fill="${c.css}" fill-opacity="${Math.min(1, bodyOp + 0.2)}" stroke="var(--ink)" stroke-opacity=".55" stroke-width="1.5"/>
+  <ellipse cx="560" cy="92" rx="5" ry="10" fill="#fff" opacity="${on ? 0.55 : 0.3}" transform="rotate(-15 560 92)"/>
+  <line x1="562" y1="136" x2="562" y2="170" stroke="#9aa5b5" stroke-width="3" stroke-linecap="round"/>
+  <line x1="578" y1="136" x2="578" y2="170" stroke="#9aa5b5" stroke-width="3" stroke-linecap="round"/>
+  <text x="548" y="158" text-anchor="end" class="mut" style="font-size:13px;font-weight:700">+</text>
+  <text x="592" y="158" class="mut" style="font-size:13px;font-weight:700">−</text>
+  <text x="570" y="62" text-anchor="middle" class="mut">LED ${c.label}</text>
+  <!-- anotações -->
+  <text x="${px + 10}" y="32" style="font-weight:700;fill:${on ? 'var(--current)' : 'var(--muted)'}">D${p.pin} = ${on ? 'HIGH · 5 V' : 'LOW · 0 V'}</text>
+  <text x="590" y="240" style="font-weight:700;fill:${on ? 'var(--current)' : 'var(--muted)'}">${on ? d.i.toFixed(1) : '0.0'} mA</text>
+  <text x="330" y="304" text-anchor="middle" class="mut" style="font-size:11px">retorno ao GND (0 V)</text>
+</svg>`;
+    },
+
+    /* forma de onda do pino */
+    wave(p, d) {
+      const x0 = 78, x1 = 620, yH = 30, yL = 74, cycles = 3, seg = (x1 - x0) / (cycles * 2);
+      let path = `M${x0} ${yL} V${yH}`;
+      for (let k = 0; k < cycles * 2; k++) {
+        const xe = x0 + seg * (k + 1);
+        path += ` H${xe}`;
+        if (k < cycles * 2 - 1) path += ` V${k % 2 === 0 ? yL : yH}`;
+      }
+      return `
+<svg viewBox="0 0 640 110" role="img" aria-label="Forma de onda do pino D${p.pin}">
+  <line x1="${x0}" y1="${yH}" x2="${x1}" y2="${yH}" stroke="var(--line)" stroke-dasharray="4 5"/>
+  <line x1="${x0}" y1="${yL}" x2="${x1}" y2="${yL}" stroke="var(--line)" stroke-dasharray="4 5"/>
+  <text x="70" y="${yH + 4}" text-anchor="end" class="mut">5 V</text><text x="70" y="${yL + 4}" text-anchor="end" class="mut">0 V</text>
+  <path d="${path}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round"/>
+  <text x="${x0 + seg / 2}" y="18" text-anchor="middle" class="mut">ligado ${p.interval} ms</text>
+  <text x="${x0 + seg * 1.5}" y="96" text-anchor="middle" class="mut">desligado ${p.interval} ms</text>
+  <line x1="${x0 + seg * 2}" y1="98" x2="${x0 + seg * 2}" y2="104" stroke="var(--muted)"/>
+  <text x="${x0 + seg * 3}" y="108" text-anchor="middle" class="mut" style="font-size:10px">período = ${d.period} ms</text>
+</svg>`;
+    },
+
+    meter: true,
+    waveTitle: 'Sinal no pino',
+    createSim() {
+      const self = this;
+      let timer = null, on = false, count = 0, lines = [], running = true;
+      const show = () => showSerial(params.serial ? lines : null);
+      const render = () => {
+        const d = self.derive(params);
+        $('#circuit').innerHTML = self.draw(params, on, d);
+        setPill(`D${params.pin} = ${on ? 'HIGH' : 'LOW'}`, on);
+      };
+      const stop = () => { clearTimeout(timer); timer = null; };
+      const start = () => {
+        stop(); on = false; count = 0;
+        lines = params.serial ? [stamp(0, 'Blink iniciado!')] : [];
+        show(); render();
+        const tick = () => {
+          on = !on; count++; render();
+          if (params.serial) {
+            lines.push(stamp(count * params.interval, on ? 'LED ligado' : 'LED desligado'));
+            if (lines.length > 40) lines.shift();
+            show();
+          }
+          timer = setTimeout(tick, Math.max(10, params.interval));
+        };
+        timer = setTimeout(tick, 10);
+      };
+      return {
+        actionsHtml: '<button class="btn" id="toggle">⏸ Pausar</button><span class="mutetxt">Visual aproximado do que o Wokwi vai mostrar.</span>',
+        bind() { $('#toggle').onclick = () => { running = !running; $('#toggle').textContent = running ? '⏸ Pausar' : '▶ Continuar'; running ? start() : stop(); }; },
+        onParams() { $('#wave').innerHTML = self.wave(params, self.derive(params)); if (running) start(); else { show(); render(); } },
+        stop
+      };
+    },
+
+    experiments: [
+      'Intervalo de 100 ms e depois 2000 ms: em que ponto o olho deixa de ver o piscar?',
+      'Troque o resistor para 10 kΩ e depois para 10 Ω e observe o medidor de corrente.',
+      'Mude a cor para azul ou branco: por que a corrente muda com o mesmo resistor?',
+      'Copie o código no modo millis(): o resultado visual é igual, mas o loop() fica livre.',
+      'No Wokwi, inverta A e C do LED. Por que ele não acende?',
+      'Mude o pino aqui, copie o main.cpp e o diagram.json e teste no Wokwi.'
+    ],
+    quiz: [
+      ['Por que o LED precisa de um resistor em série?', 'O LED não limita a própria corrente. Sem o resistor, a corrente sobe até queimar o LED e/ou o pino. O resistor fixa a corrente por I = (Vcc − Vf) / R.'],
+      ['Qual a diferença entre HIGH e LOW no pino?', 'HIGH coloca o pino em 5 V (no Uno). LOW coloca em 0 V. A corrente do LED só existe quando há diferença de tensão entre o pino e o GND.'],
+      ['O que o Arduino faz durante um delay(500)?', 'Fica parado naquele ponto, sem ler botões ou sensores. Por isso o millis() é a base de programas que fazem várias coisas ao mesmo tempo.'],
+      ['Qual a corrente com 220 Ω e LED vermelho?', '(5 − 2) / 220 ≈ 13,6 mA, valor seguro e visível. É o que o painel mostra com os parâmetros padrão.']
+    ]
+  },
+  {
+    id: '02', slug: '02-botao-led-uno', title: 'Botão + LED', board: 'Arduino Uno', boardClass: 'uno', status: 'criado',
+    summary: 'Ler uma entrada digital com INPUT_PULLUP, tratar o bounce do botão e controlar o LED.',
+    concepts: ['digitalRead()', 'INPUT_PULLUP', 'Debounce', 'Detecção de borda', 'millis()'],
+    meter: false,
+    waveTitle: 'Sinal do botão: bruto × aceito pelo Arduino',
+    params: [
+      { key: 'btnPin',   label: 'Pino do botão', type: 'select', options: [2,3,4,5,6,7,8,9,10,11,12].map(n => ({ v: n, t: 'D' + n })),
+        hint: 'Uma perna do botão vai neste pino e a outra no GND.' },
+      { key: 'ledPin',   label: 'Pino do LED',   type: 'select', options: [2,3,4,5,6,7,8,9,10,11,12,13].map(n => ({ v: n, t: 'D' + n })) },
+      { key: 'mode',     label: 'Comportamento', type: 'select', options: [{ v: 'toggle', t: 'Alterna a cada aperto (toggle)' }, { v: 'hold', t: 'Aceso enquanto pressionado' }] },
+      { key: 'debounce', label: 'Debounce',      type: 'range', min: 0, max: 100, step: 1, unit: ' ms',
+        hint: 'Tempo que o sinal precisa ficar estável para ser aceito. 0 = sem debounce.' },
+      { key: 'serial',   label: 'Imprimir no Serial', type: 'check' },
+      { key: 'bounce',   label: 'Ruído do botão', type: 'range', min: 0, max: 20, step: 1, unit: ' ms', simOnly: true,
+        hint: 'Quanto tempo os contatos “tremem” ao apertar. Existe só na simulação; botões reais têm de 1 a 20 ms.' }
+    ],
+    defaults: { btnPin: 2, ledPin: 8, mode: 'toggle', debounce: 20, serial: true, bounce: 6 },
+
+    derive(p) {
+      let level = 'good', msg = 'Debounce cobre o ruído do botão: cada aperto vira uma única leitura.';
+      if (p.btnPin === p.ledPin) { level = 'bad'; msg = 'Botão e LED estão no mesmo pino. Escolha pinos diferentes.'; }
+      else if (p.bounce > 0 && p.debounce === 0) { level = 'bad'; msg = 'Sem debounce, cada “tremida” do contato vira uma leitura. No modo toggle o LED pode ficar no estado errado. Use o teste de 10 cliques.'; }
+      else if (p.debounce < p.bounce) { level = 'warn'; msg = 'O debounce é menor que o ruído do botão: alguns apertos ainda vão gerar leituras falsas.'; }
+      else if (p.debounce > 50) { level = 'warn'; msg = 'Debounce longo: o filtro funciona, mas o LED demora a reagir e apertos rápidos são perdidos.'; }
+      return { level, msg, stats: [
+        [p.debounce + ' ms', 'debounce'],
+        [p.bounce + ' ms', 'ruído do botão (sim.)'],
+        ['≥ ' + p.debounce + ' ms', 'atraso até o LED reagir'],
+        ['0,1–0,25 mA', 'corrente do pull-up (20–50 kΩ)']
+      ] };
+    },
+
+    files(p) {
+      const hold = p.mode === 'hold', ser = p.serial;
+      const modoTxt = hold ? 'Comportamento: LED aceso enquanto o botao esta pressionado.' : 'Comportamento: alterna o LED a cada pressao (toggle), com debounce.';
+      const debTxt = p.debounce === 0 ? '\n// DEBOUNCE_MS = 0 significa sem filtro: o bounce gera leituras falsas.' : '';
+      const decl = (hold ? '' : 'bool ledLigado = false;\n') +
+        'bool leituraAnterior = HIGH;   // ultima leitura bruta do pino\n' +
+        'bool estadoEstavel = HIGH;     // estado aceito depois do debounce\n' +
+        'unsigned long ultimaMudanca = 0;' + (!hold && ser ? '\nunsigned int contagem = 0;' : '');
+      const setupSerial = ser ? '\n  Serial.begin(9600);\n  Serial.println("Pronto! Aperte o botao.");' : '';
+      const action = hold
+        ? `    // Botao pressionado = LOW (ligado ao GND com pull-up)
+    bool pressionado = (estadoEstavel == LOW);
+    digitalWrite(PINO_LED, pressionado ? HIGH : LOW);${ser ? '\n    Serial.println(pressionado ? "Botao pressionado -> LED ligado" : "Botao solto -> LED desligado");' : ''}`
+        : `    if (estadoEstavel == LOW) {  // so reage ao aperto, nao a soltura
+      ledLigado = !ledLigado;
+      digitalWrite(PINO_LED, ledLigado);${ser ? `
+      contagem++;
+      Serial.print("Pressao #");
+      Serial.print(contagem);
+      Serial.println(ledLigado ? " -> LED ligado" : " -> LED desligado");` : ''}
+    }`;
+      const main = `#include <Arduino.h>
+
+// Projeto 02 - Botao + LED (Arduino Uno)
+// Botao no pino D${p.btnPin} com INPUT_PULLUP: solto = HIGH, pressionado = LOW.
+// LED no pino D${p.ledPin} via resistor de 220 ohms.
+// ${modoTxt}
+
+const uint8_t PINO_BOTAO = ${p.btnPin};
+const uint8_t PINO_LED = ${p.ledPin};
+const unsigned long DEBOUNCE_MS = ${p.debounce};${debTxt}
+
+${decl}
+
+void setup() {
+  pinMode(PINO_BOTAO, INPUT_PULLUP);  // resistor de pull-up interno
+  pinMode(PINO_LED, OUTPUT);${setupSerial}
+}
+
+void loop() {
+  bool leitura = digitalRead(PINO_BOTAO);
+
+  // Qualquer mudanca na leitura reinicia a contagem do debounce.
+  if (leitura != leituraAnterior) {
+    ultimaMudanca = millis();
+    leituraAnterior = leitura;
+  }
+
+  // So aceita o novo estado se ele ficou estavel por DEBOUNCE_MS.
+  if ((millis() - ultimaMudanca) >= DEBOUNCE_MS && leitura != estadoEstavel) {
+    estadoEstavel = leitura;
+
+${action}
+  }
+}
+`;
+      const diagram = {
+        version: 1, author: 'Estudos Arduino', editor: 'wokwi',
+        parts: [
+          { type: 'wokwi-arduino-uno', id: 'uno', top: 0, left: 0, attrs: {} },
+          { type: 'wokwi-pushbutton', id: 'btn1', top: -95, left: 30, attrs: { color: 'green' } },
+          { type: 'wokwi-led', id: 'led1', top: -90, left: 170, attrs: { color: 'red' } },
+          { type: 'wokwi-resistor', id: 'r1', top: -30, left: 130, rotate: 90, attrs: { value: '220' } }
+        ],
+        connections: [
+          ['uno:' + p.ledPin, 'r1:1', 'green', ['v-20', 'h0']],
+          ['r1:2', 'led1:A', 'green', ['h0']],
+          ['led1:C', 'uno:GND.1', 'black', ['v0']],
+          ['btn1:1.l', 'uno:' + p.btnPin, 'blue', ['v0']],
+          ['btn1:2.l', 'uno:GND.2', 'black', ['v0']]
+        ],
+        dependencies: {}
+      };
+      return [
+        { name: 'src/main.cpp', lang: 'cpp', text: main },
+        { name: 'diagram.json', lang: 'json', text: JSON.stringify(diagram, null, 2) + '\n' },
+        { name: 'platformio.ini', lang: 'ini', text: '[env:uno]\nplatform = atmelavr\nboard = uno\nframework = arduino\nmonitor_speed = 9600\n' },
+        { name: 'wokwi.toml', lang: 'toml', text: "[wokwi]\nversion = 1\nfirmware = '.pio/build/uno/firmware.hex'\nelf = '.pio/build/uno/firmware.elf'\n" }
+      ];
+    },
+
+    draw(p, st, d) {
+      const xs = n => 60 + DIGITAL_PINS.indexOf(n) * 22;
+      const pxB = xs(p.btnPin), pxL = xs(p.ledPin);
+      const c = LED_COLORS.red, led = st.led, bodyOp = led ? 1 : 0.28;
+      const pinsSvg = DIGITAL_PINS.map((n, i) => {
+        const x = 60 + i * 22, isB = n === p.btnPin, isL = n === p.ledPin, sel = isB || isL;
+        const col = isB ? '#60a5fa' : isL ? '#fbbf24' : '#d9b44a';
+        return `<rect x="${x - 4}" y="${sel ? 106 : 108}" width="8" height="${sel ? 12 : 8}" rx="1.5" fill="${col}"/>
+                <text x="${x}" y="136" text-anchor="middle" class="pin-n${sel ? ' sel' : ''}">${n}</text>`;
+      }).join('');
+      const wl = [`M${pxL} 108 V40 H400`, 'M480 40 H520 V170 H562', 'M578 170 V290 H150 V259'];
+      const wb = [`M${pxB} 108 V90 H372`, 'M440 90 H456 V290'];
+      const wires = [...wl, ...wb, 'M372 90 H380', 'M432 90 H440'].map(w => `<path class="wire" d="${w}"/>`).join('') +
+        (led ? wl.map(w => `<path class="wire flow" d="${w}"/>`).join('') : '') +
+        (st.pressed ? wb.map(w => `<path class="wire flow blue" d="${w}"/>`).join('') : '');
+      return `
+<svg viewBox="0 0 640 310" role="img" aria-label="Esquema: botão no pino D${p.btnPin} e LED no pino D${p.ledPin}">
+  <defs><filter id="blur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="10"/></filter></defs>
+  <rect x="20" y="120" width="310" height="130" rx="12" fill="#0b6e75"/>
+  <rect x="8" y="140" width="38" height="46" rx="3" fill="#b9c2cf"/><rect x="14" y="146" width="26" height="34" rx="2" fill="#8d97a6"/>
+  <rect x="8" y="200" width="38" height="36" rx="3" fill="#1b1f27"/>
+  <rect x="196" y="160" width="110" height="36" rx="3" fill="#161a22"/>
+  <text x="251" y="182" text-anchor="middle" style="fill:#9fb0c6;font-size:10px;font-family:ui-monospace,Consolas,monospace">ATmega328P</text>
+  <circle cx="76" cy="160" r="10" fill="#c93c3c" stroke="#e8e8e8" stroke-width="2"/>
+  <text x="130" y="222" text-anchor="middle" class="on-board" style="font-size:15px;letter-spacing:.08em">ARDUINO UNO</text>
+  <rect x="48" y="102" width="270" height="22" rx="3" fill="#101419"/>${pinsSvg}
+  <rect x="130" y="244" width="70" height="18" rx="3" fill="#101419"/>
+  <rect x="146" y="251" width="8" height="8" rx="1.5" fill="#d9b44a"/><rect x="168" y="251" width="8" height="8" rx="1.5" fill="#d9b44a"/>
+  <text x="150" y="238" text-anchor="middle" class="pin-n">GND</text>
+  ${wires}
+  <circle cx="456" cy="290" r="4" fill="var(--ink)"/>
+  <!-- botão (clicável) -->
+  <g data-btn style="cursor:pointer">
+    <rect x="380" y="70" width="52" height="40" rx="7" fill="#dfe4ec" stroke="#8d97a6" stroke-width="2"/>
+    <circle cx="387" cy="77" r="2" fill="#8d97a6"/><circle cx="425" cy="77" r="2" fill="#8d97a6"/>
+    <circle cx="387" cy="103" r="2" fill="#8d97a6"/><circle cx="425" cy="103" r="2" fill="#8d97a6"/>
+    <circle cx="406" cy="90" r="${st.pressed ? 10 : 13}" fill="${st.pressed ? '#1f7a3a' : '#2f9e44'}" stroke="#14532d" stroke-width="2"/>
+  </g>
+  <text x="406" y="62" text-anchor="middle" class="mut">Botão (clique aqui)</text>
+  <text x="${pxB - 8}" y="84" text-anchor="end" style="font-weight:700;fill:${st.pressed ? '#60a5fa' : 'var(--muted)'}">D${p.btnPin} = ${st.pressed ? 'LOW (apertado)' : 'HIGH (solto)'}</text>
+  <!-- resistor 220 -->
+  <rect x="404" y="28" width="72" height="24" rx="11" fill="#e3c99a"/>
+  <rect x="418" y="28" width="7" height="24" fill="${BAND_COLORS[2]}"/><rect x="432" y="28" width="7" height="24" fill="${BAND_COLORS[2]}"/>
+  <rect x="446" y="28" width="7" height="24" fill="${BAND_COLORS[1]}"/><rect x="462" y="28" width="6" height="24" fill="#c9a227"/>
+  <text x="440" y="18" text-anchor="middle" style="font-weight:700">220 Ω</text>
+  <!-- LED -->
+  ${led ? `<circle cx="570" cy="100" r="56" fill="${c.css}" opacity=".8" filter="url(#blur)"/>` : ''}
+  <path d="M548 130 V100 a22 22 0 0 1 44 0 V130 Z" fill="${c.css}" fill-opacity="${bodyOp}" stroke="var(--ink)" stroke-opacity=".55" stroke-width="2"/>
+  <rect x="543" y="130" width="54" height="6" rx="2" fill="${c.css}" fill-opacity="${Math.min(1, bodyOp + 0.2)}" stroke="var(--ink)" stroke-opacity=".55" stroke-width="1.5"/>
+  <ellipse cx="560" cy="92" rx="5" ry="10" fill="#fff" opacity="${led ? 0.55 : 0.3}" transform="rotate(-15 560 92)"/>
+  <line x1="562" y1="136" x2="562" y2="170" stroke="#9aa5b5" stroke-width="3" stroke-linecap="round"/>
+  <line x1="578" y1="136" x2="578" y2="170" stroke="#9aa5b5" stroke-width="3" stroke-linecap="round"/>
+  <text x="548" y="158" text-anchor="end" class="mut" style="font-size:13px;font-weight:700">+</text>
+  <text x="592" y="158" class="mut" style="font-size:13px;font-weight:700">−</text>
+  <text x="570" y="62" text-anchor="middle" class="mut">LED vermelho</text>
+  <text x="${pxL + 8}" y="30" style="font-weight:700;fill:${led ? 'var(--current)' : 'var(--muted)'}">D${p.ledPin} = ${led ? 'HIGH' : 'LOW'}</text>
+  <text x="330" y="304" text-anchor="middle" class="mut" style="font-size:11px">retorno ao GND (0 V)</text>
+</svg>`;
+    },
+
+    /* r = resultado de simulateEdge(); preview = ainda não houve clique */
+    wave(p, d, r, preview) {
+      const W = r.W, x = t => 80 + t / W * 540;
+      const rawPath = stepPath(r.from, r.raw, 30, 62, x, W);
+      const accPath = stepPath(r.from, r.acc, 118, 150, x, W);
+      const lows = r.acc.filter(e => e.v === 0).length;
+      const dots = r.acc.map(e => `<circle cx="${x(e.t)}" cy="${e.v ? 118 : 150}" r="4.5" fill="${e.v === 0 ? 'var(--bad)' : 'var(--good)'}"/>`).join('');
+      const band = p.debounce > 0 ? `<rect x="${x(r.lastRaw)}" y="20" width="${Math.max(0, x(Math.min(W, r.lastRaw + p.debounce)) - x(r.lastRaw))}" height="140" fill="var(--accent)" opacity=".13"/>
+        <text x="${x(r.lastRaw) + 4}" y="96" class="mut" style="font-size:10px">janela de debounce</text>` : '';
+      const title = (preview ? 'Prévia · ' : 'Último evento · ') + (r.dir === 'press' ? 'aperto' : 'soltura') + ' do botão';
+      return `
+<svg viewBox="0 0 640 196" role="img" aria-label="Sinal bruto do botão e sinal aceito pelo Arduino">
+  ${band}
+  <line x1="80" y1="30" x2="620" y2="30" stroke="var(--line)" stroke-dasharray="4 5"/><line x1="80" y1="62" x2="620" y2="62" stroke="var(--line)" stroke-dasharray="4 5"/>
+  <line x1="80" y1="118" x2="620" y2="118" stroke="var(--line)" stroke-dasharray="4 5"/><line x1="80" y1="150" x2="620" y2="150" stroke="var(--line)" stroke-dasharray="4 5"/>
+  <text x="72" y="34" text-anchor="end" class="mut">HIGH</text><text x="72" y="66" text-anchor="end" class="mut">LOW</text>
+  <text x="72" y="122" text-anchor="end" class="mut">HIGH</text><text x="72" y="154" text-anchor="end" class="mut">LOW</text>
+  <text x="80" y="14" class="mut">sinal bruto no pino D${p.btnPin} (com bounce)</text>
+  <text x="80" y="106" class="mut">o que o Arduino aceitou</text>
+  <path d="${rawPath}" fill="none" stroke="var(--current)" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="${accPath}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round"/>
+  ${dots}
+  <text x="80" y="186" class="mut" style="font-size:11px">0 ms</text>
+  <text x="620" y="186" text-anchor="end" class="mut" style="font-size:11px">${W.toFixed(0)} ms</text>
+  <text x="350" y="186" text-anchor="middle" style="font-weight:700;font-size:11px">${title} · ${lows} leitura(s) LOW aceita(s)</text>
+</svg>`;
+    },
+
+    createSim() {
+      const self = this;
+      const st = { pressed: false, led: false, clicks: 0, detected: 0, last: null };
+      let timers = [], lines = [], t0 = performance.now(), cleanup = [];
+      const now = () => performance.now() - t0;
+      const log = text => { if (!params.serial) return; lines.push(stamp(now(), text)); if (lines.length > 40) lines.shift(); showSerial(lines); };
+      const render = () => {
+        const d = self.derive(params);
+        $('#circuit').innerHTML = self.draw(params, st, d);
+        const preview = !st.last;
+        $('#wave').innerHTML = self.wave(params, d, st.last || simulateEdge(params, 'press', mulberry32(7)), preview);
+        setPill(`D${params.btnPin} = ${st.pressed ? 'LOW' : 'HIGH'}`, st.pressed);
+        const c = $('#counters');
+        if (c) c.innerHTML = `<span class="pill">cliques: ${st.clicks}</span><span class="pill ${st.detected > st.clicks ? 'bad' : ''}">leituras de aperto: ${st.detected}</span>`;
+      };
+      const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
+      const apply = e => {
+        if (params.mode === 'hold') {
+          st.led = e.v === 0;
+          if (e.v === 0) st.detected++;
+          log(e.v === 0 ? 'Botao pressionado -> LED ligado' : 'Botao solto -> LED desligado');
+        } else if (e.v === 0) {
+          st.led = !st.led; st.detected++;
+          log(`Pressao #${st.detected} -> LED ${st.led ? 'ligado' : 'desligado'}`);
+        }
+        render();
+      };
+      const play = res => { st.last = res; res.acc.forEach(e => timers.push(setTimeout(() => apply(e), e.t))); render(); };
+      const press = () => { if (st.pressed) return; st.pressed = true; st.clicks++; play(simulateEdge(params, 'press', Math.random)); };
+      const release = () => { if (!st.pressed) return; st.pressed = false; play(simulateEdge(params, 'release', Math.random)); };
+      const quick = () => { if (st.pressed) return; press(); timers.push(setTimeout(release, 150)); };
+      const batch = () => {
+        const n = 10; let led = false, det = 0;
+        for (let i = 0; i < n; i++) for (const dir of ['press', 'release']) {
+          const res = simulateEdge(params, dir, Math.random);
+          if (params.mode === 'hold') { const lastAcc = res.acc[res.acc.length - 1]; if (lastAcc) led = lastAcc.v === 0; det += res.acc.filter(e => e.v === 0).length; }
+          else res.acc.forEach(e => { if (e.v === 0) { led = !led; det++; } });
+        }
+        const expected = params.mode === 'hold' ? false : n % 2 === 1;
+        const ok = led === expected && det === n;
+        $('#batchOut').innerHTML = `<div class="alert ${ok ? 'good' : 'bad'}">Teste de ${n} cliques: ${det} leituras de aperto (${det - n >= 0 ? det - n : 0} falsas). LED esperado: ${expected ? 'ligado' : 'desligado'}; ficou: ${led ? 'ligado' : 'desligado'}. ${ok ? 'Tudo certo.' : 'O bounce enganou o programa. Aumente o debounce.'}</div>`;
+      };
+      const reset = () => {
+        clearTimers(); Object.assign(st, { pressed: false, led: false, clicks: 0, detected: 0, last: null });
+        t0 = performance.now();
+        lines = params.serial ? [stamp(0, 'Pronto! Aperte o botao.')] : [];
+        showSerial(params.serial ? lines : null);
+        const b = $('#batchOut'); if (b) b.innerHTML = '';
+        render();
+      };
+      return {
+        actionsHtml: `<button class="btn primary" id="hold" title="Mantenha pressionado">Segurar botão</button>
+          <button class="btn" id="quick">Clique rápido</button>
+          <button class="btn" id="batch">Teste: 10 cliques</button>
+          <span id="counters" style="display:flex;gap:6px;flex-wrap:wrap"></span>
+          <div id="batchOut" style="flex-basis:100%"></div>`,
+        bind() {
+          const c = $('#circuit'), h = $('#hold');
+          const down = e => { if (e.target.closest('[data-btn]')) { e.preventDefault(); press(); } };
+          const up = () => release();
+          c.addEventListener('pointerdown', down);
+          h.addEventListener('pointerdown', e => { e.preventDefault(); press(); });
+          h.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); press(); } });
+          h.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') release(); });
+          window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+          cleanup.push(() => { window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); });
+          $('#quick').onclick = quick; $('#batch').onclick = batch;
+        },
+        onParams: reset,
+        stop() { clearTimers(); cleanup.forEach(f => f()); cleanup = []; }
+      };
+    },
+
+    experiments: [
+      'Com debounce 0 e ruído 6 ms, no modo toggle, use “Teste: 10 cliques”. Quantas leituras falsas aparecem e o LED fica certo?',
+      'Suba o debounce de 0 até o ponto em que o teste passa sempre. Esse valor tem relação com o ruído do botão?',
+      'Aumente o ruído para 20 ms mantendo o debounce em 20. Ainda é seguro?',
+      'Troque para “aceso enquanto pressionado”: o bounce ainda estraga o resultado? (Veja o LED e o gráfico.)',
+      'No Wokwi, troque INPUT_PULLUP por INPUT no código. O que acontece com o LED? (Entrada flutuante.)',
+      'Coloque o debounce em 100 ms e aperte rápido várias vezes. O que se perde?'
+    ],
+    quiz: [
+      ['Por que usar INPUT_PULLUP e ligar o botão ao GND?', 'O pull-up interno (20–50 kΩ) mantém o pino em HIGH quando o botão está solto. Ao apertar, o botão liga o pino ao GND e a leitura vira LOW. Por isso a lógica é invertida: pressionado = LOW. Você não precisa de resistor externo.'],
+      ['O que é bounce e por que ele atrapalha?', 'Ao fechar ou abrir, os contatos metálicos quicam por alguns milissegundos e geram várias transições rápidas. O Arduino lê muito mais rápido que isso e conta cada transição como um aperto. No modo toggle, o LED pode alternar várias vezes e terminar no estado errado.'],
+      ['Por que o debounce usa millis() e não delay(20)?', 'O delay() para o programa e nada mais é lido nesse intervalo. Com millis() o loop() continua rodando e só aceita o novo estado depois que ele ficou estável por DEBOUNCE_MS.'],
+      ['O que é uma entrada flutuante?', 'Um pino de entrada sem nada definindo seu nível. Ele capta ruído do ambiente e lê HIGH ou LOW de forma imprevisível. O pull-up (ou pull-down) resolve isso.']
+    ]
+  },
+  {
+    id: '03', slug: '03-potenciometro-pwm-uno', title: 'Potenciômetro + PWM', board: 'Arduino Uno', boardClass: 'uno', status: 'criado',
+    summary: 'Ler uma entrada analógica (ADC) e controlar o brilho do LED com PWM.',
+    concepts: ['analogRead()', 'analogWrite()', 'ADC de 10 bits', 'PWM e duty cycle', 'map()'],
+    meter: false,
+    waveTitle: 'Sinal PWM e curva de conversão',
+    params: [
+      { key: 'ledPin',   label: 'Pino do LED (PWM ~)', type: 'select', options: PWM_PINS.map(n => ({ v: n, t: 'D' + n + ' ~' })),
+        hint: 'No Uno só os pinos 3, 5, 6, 9, 10 e 11 têm PWM (marcados com ~).' },
+      { key: 'curve',    label: 'Curva de brilho', type: 'select', options: [{ v: 'linear', t: 'Linear (map)' }, { v: 'gamma', t: 'Correção gama 2,2' }],
+        hint: 'O olho não percebe o brilho de forma linear; a gama compensa isso.' },
+      { key: 'resistor', label: 'Resistor', type: 'select', options: [100, 220, 330, 470, 1000].map(r => ({ v: r, t: fmtOhm(r) })) },
+      { key: 'color',    label: 'Cor do LED', type: 'select', options: Object.entries(LED_COLORS).map(([k, c]) => ({ v: k, t: c.label[0].toUpperCase() + c.label.slice(1) + ' (Vf ≈ ' + c.vf + ' V)' })) },
+      { key: 'interval', label: 'Intervalo de leitura', type: 'range', min: 10, max: 500, step: 10, unit: ' ms',
+        hint: 'Quanto o loop() espera entre uma leitura e a próxima (delay).' },
+      { key: 'serial',   label: 'Imprimir no Serial', type: 'check' },
+      { key: 'pot',      label: 'Posição do potenciômetro', type: 'range', min: 0, max: 1023, step: 1, unit: '', simOnly: true,
+        hint: 'Valor que o analogRead() leria no A0. Você também pode arrastar o botão no esquema.' }
+    ],
+    defaults: { ledPin: 9, curve: 'linear', resistor: 220, color: 'red', interval: 50, serial: true, pot: 512 },
+
+    derive(p) {
+      const c = LED_COLORS[p.color];
+      const duty = pwmFor(p.curve, p.pot), pct = duty / 255 * 100;
+      const iOn = Math.max(0, (VCC - c.vf) / p.resistor * 1000);
+      const vin = p.pot / 1023 * VCC, vavg = VCC * duty / 255;
+      const freq = (p.ledPin === 5 || p.ledPin === 6) ? 976 : 490;
+      let level = 'good', msg = `O PWM liga e desliga o pino ${freq} vezes por segundo. O olho enxerga a média: ${pct.toFixed(0)}% do brilho máximo.`;
+      if (iOn > 40)      { level = 'bad';  msg = `Com o LED aceso a corrente seria ${iOn.toFixed(0)} mA, acima do limite do pino (40 mA). Aumente o resistor.`; }
+      else if (iOn > 20) { level = 'warn'; msg = `Com o LED aceso a corrente é ${iOn.toFixed(0)} mA, acima dos 20 mA recomendados. O PWM reduz só a média, não o pico.`; }
+      else if (duty === 0) msg = 'Duty cycle 0%: o pino fica em LOW o tempo todo e o LED apagado.';
+      else if (duty === 255) msg = 'Duty cycle 100%: o pino fica em HIGH o tempo todo (5 V contínuos).';
+      return { duty, pct, iOn, iAvg: iOn * duty / 255, vin, vavg, freq, period: 1000 / freq, level, msg, stats: [
+        [vin.toFixed(2) + ' V', 'tensão no pino A0'],
+        [p.pot + ' → ' + duty, 'ADC (0–1023) → PWM (0–255)'],
+        [pct.toFixed(0) + ' %', 'duty cycle'],
+        [vavg.toFixed(2) + ' V', 'tensão média no pino'],
+        [freq + ' Hz', 'frequência do PWM'],
+        [(iOn * duty / 255).toFixed(1) + ' mA', 'corrente média no LED']
+      ] };
+    },
+
+    files(p) {
+      const ser = p.serial, gamma = p.curve === 'gamma';
+      const conv = gamma
+        ? `  float normalizado = leitura / 1023.0;                       // 0.0 a 1.0
+  int brilho = (int)(pow(normalizado, 2.2) * 255.0 + 0.5);   // correcao gama (percepcao do olho)`
+        : '  int brilho = map(leitura, 0, 1023, 0, 255);  // 10 bits (0-1023) -> 8 bits (0-255)';
+      const log = ser ? `
+
+  Serial.print("ADC: ");
+  Serial.print(leitura);
+  Serial.print(" -> PWM: ");
+  Serial.print(brilho);
+  Serial.print(" (");
+  Serial.print(brilho * 100L / 255);
+  Serial.println("%)");` : '';
+      const main = `#include <Arduino.h>
+
+// Projeto 03 - Potenciometro + LED com PWM (Arduino Uno)
+// Potenciometro: pino do meio no A0, extremos em 5V e GND.
+// LED no pino D${p.ledPin} (tem PWM, marcado com ~ na placa) via resistor de ${ohmAscii(p.resistor)}.
+
+const uint8_t PINO_POT = A0;
+const uint8_t PINO_LED = ${p.ledPin};
+const unsigned long INTERVALO_MS = ${p.interval};
+
+void setup() {
+  pinMode(PINO_LED, OUTPUT);${ser ? '\n  Serial.begin(9600);' : ''}
+}
+
+void loop() {
+  int leitura = analogRead(PINO_POT);          // 0 a 1023 (ADC de 10 bits)
+${conv}
+  analogWrite(PINO_LED, brilho);               // PWM: duty cycle de 0 a 255${log}
+
+  delay(INTERVALO_MS);
+}
+`;
+      const diagram = {
+        version: 1, author: 'Estudos Arduino', editor: 'wokwi',
+        parts: [
+          { type: 'wokwi-arduino-uno', id: 'uno', top: 0, left: 0, attrs: {} },
+          { type: 'wokwi-potentiometer', id: 'pot1', top: -110, left: 10, attrs: {} },
+          { type: 'wokwi-led', id: 'led1', top: -90, left: 200, attrs: { color: p.color } },
+          { type: 'wokwi-resistor', id: 'r1', top: -30, left: 160, rotate: 90, attrs: { value: String(p.resistor) } }
+        ],
+        connections: [
+          ['uno:' + p.ledPin, 'r1:1', 'green', ['v-20', 'h0']],
+          ['r1:2', 'led1:A', 'green', ['h0']],
+          ['led1:C', 'uno:GND.1', 'black', ['v0']],
+          ['pot1:VCC', 'uno:5V', 'red', ['v0']],
+          ['pot1:SIG', 'uno:A0', 'blue', ['v0']],
+          ['pot1:GND', 'uno:GND.2', 'black', ['v0']]
+        ],
+        dependencies: {}
+      };
+      return [
+        { name: 'src/main.cpp', lang: 'cpp', text: main },
+        { name: 'diagram.json', lang: 'json', text: JSON.stringify(diagram, null, 2) + '\n' },
+        { name: 'platformio.ini', lang: 'ini', text: '[env:uno]\nplatform = atmelavr\nboard = uno\nframework = arduino\nmonitor_speed = 9600\n' },
+        { name: 'wokwi.toml', lang: 'toml', text: "[wokwi]\nversion = 1\nfirmware = '.pio/build/uno/firmware.hex'\nelf = '.pio/build/uno/firmware.elf'\n" }
+      ];
+    },
+
+    draw(p, st, d) {
+      const c = LED_COLORS[p.color], duty = d.duty / 255, lit = duty > 0.03;
+      const px = 60 + DIGITAL_PINS.indexOf(p.ledPin) * 22;
+      const bodyOp = 0.28 + 0.72 * duty;
+      const pinsSvg = DIGITAL_PINS.map((n, i) => {
+        const x = 60 + i * 22, sel = n === p.ledPin;
+        return `<rect x="${x - 4}" y="${sel ? 106 : 108}" width="8" height="${sel ? 12 : 8}" rx="1.5" fill="${sel ? '#fbbf24' : '#d9b44a'}"/>
+                <text x="${x}" y="136" text-anchor="middle" class="pin-n${sel ? ' sel' : ''}">${n}${PWM_PINS.includes(n) ? '~' : ''}</text>`;
+      }).join('');
+      const powerPins = [[116, '5V'], [140, 'GND'], [162, 'GND']].map(([x, t]) =>
+        `<rect x="${x - 4}" y="251" width="8" height="8" rx="1.5" fill="#d9b44a"/><text x="${x}" y="240" text-anchor="middle" class="pin-n">${t}</text>`).join('');
+      const analogPins = [0, 1, 2, 3, 4, 5].map(i => {
+        const x = 234 + i * 16;
+        return `<rect x="${x - 4}" y="251" width="8" height="8" rx="1.5" fill="${i === 0 ? '#60a5fa' : '#d9b44a'}"/><text x="${x}" y="240" text-anchor="middle" class="pin-n${i === 0 ? ' sel' : ''}">A${i}</text>`;
+      }).join('');
+      const wl = [`M${px} 108 V40 H400`, 'M480 40 H520 V170 H562', 'M578 170 V290 H140 V262'];
+      const wires = wl.map(w => `<path class="wire" d="${w}"/>`).join('') +
+        (lit ? wl.map(w => `<path class="wire flow" d="${w}"/>`).join('') : '') +
+        '<path class="wire" style="stroke:#60a5fa" d="M430 215 V280 H234 V262"/>';
+      const ang = -135 + p.pot / 1023 * 270;
+      const pol = (deg, r) => [430 + r * Math.sin(deg * Math.PI / 180), 150 - r * Math.cos(deg * Math.PI / 180)];
+      const [ax1, ay1] = pol(-135, 42), [ax2, ay2] = pol(135, 42), [ix, iy] = pol(ang, 26), [t0x, t0y] = pol(-135, 54), [t1x, t1y] = pol(135, 54);
+      return `
+<svg viewBox="0 0 640 310" role="img" aria-label="Esquema: potenciômetro no A0 e LED no pino D${p.ledPin}">
+  <defs><filter id="blur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="10"/></filter></defs>
+  <rect x="20" y="120" width="310" height="130" rx="12" fill="#0b6e75"/>
+  <rect x="8" y="140" width="38" height="46" rx="3" fill="#b9c2cf"/><rect x="14" y="146" width="26" height="34" rx="2" fill="#8d97a6"/>
+  <rect x="8" y="200" width="38" height="36" rx="3" fill="#1b1f27"/>
+  <rect x="196" y="160" width="110" height="36" rx="3" fill="#161a22"/>
+  <text x="251" y="182" text-anchor="middle" style="fill:#9fb0c6;font-size:10px;font-family:ui-monospace,Consolas,monospace">ATmega328P</text>
+  <circle cx="76" cy="160" r="10" fill="#c93c3c" stroke="#e8e8e8" stroke-width="2"/>
+  <text x="130" y="210" text-anchor="middle" class="on-board" style="font-size:15px;letter-spacing:.08em">ARDUINO UNO</text>
+  <rect x="48" y="102" width="270" height="22" rx="3" fill="#101419"/>${pinsSvg}
+  <rect x="104" y="244" width="72" height="18" rx="3" fill="#101419"/>${powerPins}
+  <rect x="222" y="244" width="100" height="18" rx="3" fill="#101419"/>${analogPins}
+  ${wires}
+  <!-- potenciômetro -->
+  <rect x="380" y="100" width="100" height="100" rx="10" fill="#2c4a73" stroke="#1c3252" stroke-width="2"/>
+  <path d="M${ax1} ${ay1} A42 42 0 1 1 ${ax2} ${ay2}" fill="none" stroke="#8fb0dd" stroke-width="2" stroke-dasharray="2 4"/>
+  <text x="${t0x}" y="${t0y + 4}" text-anchor="middle" style="fill:#dbe6f5;font-size:10px">0</text>
+  <text x="${t1x}" y="${t1y + 4}" text-anchor="middle" style="fill:#dbe6f5;font-size:10px">1023</text>
+  <g data-knob style="cursor:grab;touch-action:none">
+    <circle cx="430" cy="150" r="32" fill="#cfd6e2" stroke="#8d97a6" stroke-width="3"/>
+    <circle cx="430" cy="150" r="24" fill="#e9edf4"/>
+    <line x1="430" y1="150" x2="${ix}" y2="${iy}" stroke="#c93c3c" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="430" cy="150" r="4" fill="#8d97a6"/>
+  </g>
+  <text x="430" y="86" text-anchor="middle" class="mut">Potenciômetro (arraste o botão)</text>
+  <path d="M400 200 V236 M430 200 V215 M460 200 V236" stroke="#9aa5b5" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M390 236 H410 M394 241 H406 M398 246 H402" stroke="var(--ink)" stroke-width="2" fill="none"/>
+  <text x="400" y="260" text-anchor="middle" class="mut" style="font-size:10px">GND</text>
+  <text x="460" y="252" text-anchor="middle" style="font-weight:700;font-size:12px">5V</text>
+  <text x="446" y="226" class="mut" style="font-size:10px;fill:#60a5fa">A0</text>
+  <!-- resistor -->
+  <rect x="404" y="28" width="72" height="24" rx="11" fill="#e3c99a"/>
+  ${(() => { const [b1, b2, bm] = bands(p.resistor); return `<rect x="418" y="28" width="7" height="24" fill="${BAND_COLORS[b1]}"/><rect x="432" y="28" width="7" height="24" fill="${BAND_COLORS[b2]}"/><rect x="446" y="28" width="7" height="24" fill="${BAND_COLORS[bm]}"/>`; })()}
+  <rect x="462" y="28" width="6" height="24" fill="#c9a227"/>
+  <text x="440" y="18" text-anchor="middle" style="font-weight:700">${fmtOhm(p.resistor)}</text>
+  <!-- LED -->
+  ${lit ? `<circle cx="570" cy="100" r="${26 + duty * 30}" fill="${c.css}" opacity="${0.25 + duty * 0.55}" filter="url(#blur)"/>` : ''}
+  <path d="M548 130 V100 a22 22 0 0 1 44 0 V130 Z" fill="${c.css}" fill-opacity="${bodyOp}" stroke="var(--ink)" stroke-opacity=".55" stroke-width="2"/>
+  <rect x="543" y="130" width="54" height="6" rx="2" fill="${c.css}" fill-opacity="${Math.min(1, bodyOp + 0.2)}" stroke="var(--ink)" stroke-opacity=".55" stroke-width="1.5"/>
+  <ellipse cx="560" cy="92" rx="5" ry="10" fill="#fff" opacity="${0.3 + duty * 0.3}" transform="rotate(-15 560 92)"/>
+  <line x1="562" y1="136" x2="562" y2="170" stroke="#9aa5b5" stroke-width="3" stroke-linecap="round"/>
+  <line x1="578" y1="136" x2="578" y2="170" stroke="#9aa5b5" stroke-width="3" stroke-linecap="round"/>
+  <text x="548" y="158" text-anchor="end" class="mut" style="font-size:13px;font-weight:700">+</text>
+  <text x="592" y="158" class="mut" style="font-size:13px;font-weight:700">−</text>
+  <text x="570" y="62" text-anchor="middle" class="mut">LED ${c.label}</text>
+  <text x="${px + 8}" y="30" style="font-weight:700;fill:${lit ? 'var(--current)' : 'var(--muted)'}">D${p.ledPin} · PWM ${d.pct.toFixed(0)}%</text>
+  <text x="590" y="240" style="font-weight:700;fill:${lit ? 'var(--current)' : 'var(--muted)'}">${d.iAvg.toFixed(1)} mA</text>
+  <text x="330" y="304" text-anchor="middle" class="mut" style="font-size:11px">retorno ao GND (0 V)</text>
+</svg>`;
+    },
+
+    wave(p, d) {
+      const x0 = 80, per = 180, yH = 44, yL = 104;
+      let path;
+      if (d.duty <= 0) path = `M${x0} ${yL} H${x0 + per * 3}`;
+      else if (d.duty >= 255) path = `M${x0} ${yH} H${x0 + per * 3}`;
+      else {
+        const hw = per * d.duty / 255; path = `M${x0} ${yH}`;
+        for (let k = 0; k < 3; k++) { const xs = x0 + k * per; path += ` H${xs + hw} V${yL} H${xs + per}${k < 2 ? ` V${yH}` : ''}`; }
+      }
+      const yAvg = yL - (yL - yH) * d.duty / 255;
+      // curva de conversão
+      const cx0 = 80, cy0 = 328, w = 240, h = 130;
+      const X = a => cx0 + a / 1023 * w, Y = b => cy0 - b / 255 * h;
+      const curve = mode => { let s = ''; for (let a = 0; a <= 1023; a += 31) s += (s ? ' L' : 'M') + X(a).toFixed(1) + ' ' + Y(pwmFor(mode, a)).toFixed(1); return s + ' L' + X(1023) + ' ' + Y(255); };
+      const other = p.curve === 'gamma' ? 'linear' : 'gamma';
+      const notes = p.curve === 'gamma'
+        ? ['brilho = (leitura ÷ 1023)^2,2 × 255', 'A gama compensa a percepção do olho:', 'o brilho parece subir de modo uniforme.']
+        : ['brilho = leitura × 255 ÷ 1023', 'O olho percebe brilho de forma não linear:', 'no meio do giro o LED já parece forte.'];
+      return `
+<svg viewBox="0 0 640 364" role="img" aria-label="Sinal PWM e curva de conversão ADC para PWM">
+  <text x="80" y="16" style="font-weight:700;font-size:12px">PWM no pino D${p.ledPin} · ${d.freq} Hz · duty ${d.pct.toFixed(0)}%</text>
+  <line x1="${x0}" y1="${yH}" x2="${x0 + per * 3}" y2="${yH}" stroke="var(--line)" stroke-dasharray="4 5"/>
+  <line x1="${x0}" y1="${yL}" x2="${x0 + per * 3}" y2="${yL}" stroke="var(--line)" stroke-dasharray="4 5"/>
+  <text x="72" y="${yH + 4}" text-anchor="end" class="mut">5 V</text><text x="72" y="${yL + 4}" text-anchor="end" class="mut">0 V</text>
+  <path d="${path}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round"/>
+  <line x1="${x0}" y1="${yAvg}" x2="${x0 + per * 3}" y2="${yAvg}" stroke="var(--current)" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="${x0 + per * 3}" y="140" text-anchor="end" style="fill:var(--current);font-weight:700;font-size:11px">linha tracejada: média ${d.vavg.toFixed(2)} V</text>
+  <path d="M${x0} 120 V126 M${x0 + per} 120 V126 M${x0} 123 H${x0 + per}" stroke="var(--muted)" fill="none"/>
+  <text x="${x0 + per / 2}" y="140" text-anchor="middle" class="mut" style="font-size:11px">período ${d.period.toFixed(2)} ms</text>
+
+  <text x="80" y="176" style="font-weight:700;font-size:12px">Conversão ADC → PWM (${p.curve === 'gamma' ? 'gama' : 'linear'})</text>
+  <line x1="${cx0}" y1="${cy0}" x2="${cx0 + w}" y2="${cy0}" stroke="var(--muted)"/><line x1="${cx0}" y1="${cy0}" x2="${cx0}" y2="${cy0 - h}" stroke="var(--muted)"/>
+  <text x="${cx0 - 6}" y="${cy0 + 4}" text-anchor="end" class="mut" style="font-size:10px">0</text>
+  <text x="${cx0 - 6}" y="${cy0 - h + 4}" text-anchor="end" class="mut" style="font-size:10px">255</text>
+  <text x="${cx0}" y="${cy0 + 14}" text-anchor="middle" class="mut" style="font-size:10px">0</text>
+  <text x="${cx0 + w}" y="${cy0 + 14}" text-anchor="middle" class="mut" style="font-size:10px">1023</text>
+  <text x="${cx0 + w / 2}" y="${cy0 + 26}" text-anchor="middle" class="mut" style="font-size:10px">leitura do A0 (ADC)</text>
+  <path d="${curve(other)}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4" opacity=".7"/>
+  <path d="${curve(p.curve)}" fill="none" stroke="var(--accent)" stroke-width="3"/>
+  <line x1="${X(p.pot)}" y1="${cy0}" x2="${X(p.pot)}" y2="${Y(d.duty)}" stroke="var(--current)" stroke-dasharray="3 3"/>
+  <line x1="${cx0}" y1="${Y(d.duty)}" x2="${X(p.pot)}" y2="${Y(d.duty)}" stroke="var(--current)" stroke-dasharray="3 3"/>
+  <circle cx="${X(p.pot)}" cy="${Y(d.duty)}" r="5.5" fill="var(--current)" stroke="var(--panel)" stroke-width="2"/>
+  <text x="372" y="214" style="font-weight:700;font-size:12px">${p.pot} → ${d.duty}</text>
+  ${notes.map((t, i) => `<text x="372" y="${238 + i * 18}" class="mut" style="font-size:11.5px">${t}</text>`).join('')}
+  <text x="372" y="302" class="mut" style="font-size:11px">linha tracejada: modo ${other === 'gamma' ? 'gama' : 'linear'} (comparação)</text>
+</svg>`;
+    },
+
+    createSim() {
+      const self = this;
+      let timer = null, sweepTimer = null, lines = [], t0 = performance.now(), dragging = false, cleanup = [], dir = 1;
+      const now = () => performance.now() - t0;
+      const render = () => {
+        const d = self.derive(params);
+        $('#circuit').innerHTML = self.draw(params, null, d);
+        $('#wave').innerHTML = self.wave(params, d);
+        setPill(`A0 = ${params.pot} · duty ${d.pct.toFixed(0)}%`, d.duty > 8);
+      };
+      const printLine = () => {
+        const d = self.derive(params);
+        lines.push(stamp(now(), `ADC: ${params.pot} -> PWM: ${d.duty} (${Math.floor(d.duty * 100 / 255)}%)`));
+        if (lines.length > 40) lines.shift();
+        showSerial(lines);
+      };
+      const stopTimers = () => { clearInterval(timer); timer = null; };
+      const stopSweep = () => { clearInterval(sweepTimer); sweepTimer = null; const b = $('#sweep'); if (b) b.textContent = '▶ Varredura automática'; };
+      const start = () => {
+        stopTimers(); t0 = performance.now(); lines = [];
+        showSerial(params.serial ? lines : null);
+        render();
+        if (params.serial) timer = setInterval(printLine, Math.max(10, params.interval));
+      };
+      const knobValue = e => {
+        const k = $('#circuit').querySelector('[data-knob]'); if (!k) return null;
+        const r = k.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const a = Math.max(-135, Math.min(135, Math.atan2(e.clientX - cx, -(e.clientY - cy)) * 180 / Math.PI));
+        return Math.round((a + 135) / 270 * 1023);
+      };
+      return {
+        actionsHtml: `<button class="btn primary" id="sweep">▶ Varredura automática</button>
+          <button class="btn" id="p0">0%</button><button class="btn" id="p50">50%</button><button class="btn" id="p100">100%</button>
+          <span class="mutetxt">Arraste o botão do potenciômetro no esquema.</span>`,
+        bind() {
+          const c = $('#circuit');
+          c.addEventListener('pointerdown', e => { if (e.target.closest('[data-knob]')) { e.preventDefault(); stopSweep(); dragging = true; setParam('pot', knobValue(e)); } });
+          const mv = e => { if (dragging) { const v = knobValue(e); if (v !== null) setParam('pot', v); } };
+          const up = () => { dragging = false; };
+          window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+          cleanup.push(() => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); });
+          $('#p0').onclick = () => { stopSweep(); setParam('pot', 0); };
+          $('#p50').onclick = () => { stopSweep(); setParam('pot', 512); };
+          $('#p100').onclick = () => { stopSweep(); setParam('pot', 1023); };
+          $('#sweep').onclick = () => {
+            if (sweepTimer) { stopSweep(); return; }
+            $('#sweep').textContent = '⏸ Parar varredura';
+            sweepTimer = setInterval(() => {
+              let v = params.pot + dir * 14;
+              if (v >= 1023) { v = 1023; dir = -1; } else if (v <= 0) { v = 0; dir = 1; }
+              setParam('pot', v);
+            }, 40);
+          };
+        },
+        onParams(key) { if (key === 'pot') render(); else start(); },
+        stop() { stopTimers(); clearInterval(sweepTimer); sweepTimer = null; cleanup.forEach(f => f()); cleanup = []; }
+      };
+    },
+
+    experiments: [
+      'Gire o potenciômetro de 0 a 1023 (ou use a varredura) e acompanhe duty, tensão média e brilho do LED.',
+      'Troque a curva para gama. No meio do giro o brilho percebido fica mais próximo de 50%?',
+      'Use o pino 5 ou 6: a frequência do PWM dobra (≈ 980 Hz). Dá para ver diferença no LED?',
+      'Coloque o resistor em 100 Ω e veja o alerta de corrente. O PWM protege o LED?',
+      'No Wokwi, mude o LED para um pino sem PWM (ex.: D4) no código e no diagrama. O que o analogWrite() faz?',
+      'Suba o intervalo de leitura para 500 ms: o LED passa a reagir com atraso ao girar o potenciômetro?'
+    ],
+    quiz: [
+      ['O que é PWM e por que o LED “escurece”?', 'PWM (modulação por largura de pulso) liga e desliga o pino muito rápido. O duty cycle é a fração do tempo em HIGH. O olho não vê o piscar (≈ 490 Hz) e percebe a média: 50% de duty parece meio brilho.'],
+      ['Por que usar map(leitura, 0, 1023, 0, 255)?', 'O ADC do Uno tem 10 bits (0 a 1023) e o analogWrite() usa 8 bits (0 a 255). O map() converte a faixa de entrada para a de saída.'],
+      ['Que pinos do Uno têm PWM?', '3, 5, 6, 9, 10 e 11, marcados com ~ na placa. Os pinos 5 e 6 usam cerca de 980 Hz; os demais, cerca de 490 Hz.'],
+      ['O analogWrite() gera uma tensão analógica de verdade?', 'Não. O pino só alterna entre 0 V e 5 V. A “tensão média” aparece porque o LED (ou um filtro RC) integra os pulsos.'],
+      ['Por que o potenciômetro tem 5 V e GND nos extremos?', 'Ele é um divisor de tensão ajustável. O pino do meio (cursor) entrega uma tensão entre 0 V e 5 V proporcional à posição, e o ADC converte essa tensão em 0 a 1023.']
+    ]
+  },
+  { id: '04', slug: '04-dht22-uno',             title: 'Sensor DHT22',        board: 'Arduino Uno',       boardClass: 'uno',  status: 'pendente', summary: 'Ler temperatura e umidade e mostrar no Serial.', concepts: ['bibliotecas', 'Serial', 'sensor digital'] },
+  { id: '05', slug: '05-lcd-i2c-uno',           title: 'Display LCD I2C',     board: 'Arduino Uno',       boardClass: 'uno',  status: 'pendente', summary: 'Mostrar texto em um display usando o barramento I2C.', concepts: ['I2C', 'endereços', 'LiquidCrystal_I2C'] },
+  { id: '06', slug: '06-blink-pico',            title: 'Blink, botão e ADC',  board: 'Raspberry Pi Pico', boardClass: 'pico', status: 'pendente', summary: 'Os mesmos conceitos no Pico, comparando com o Uno.', concepts: ['3,3 V', 'GPIO', 'ADC de 12 bits'] },
+  { id: '07', slug: '07-wifi-esp32',            title: 'Servidor web + LED',  board: 'ESP32',             boardClass: 'esp',  status: 'pendente', summary: 'Controlar um LED por uma página web via Wi-Fi.', concepts: ['Wi-Fi', 'HTTP', 'IoT'] },
+  { id: '08', slug: '08-mqtt-esp32',            title: 'Sensor + MQTT',       board: 'ESP32',             boardClass: 'esp',  status: 'pendente', summary: 'Publicar leituras de sensor em um broker MQTT.', concepts: ['MQTT', 'JSON', 'dashboard'] }
+];
+
+/* ---------- utilitários ---------- */
+const $ = s => document.querySelector(s);
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
+/* realce de sintaxe simples */
+const RULES = {
+  cpp:  { re: /(\/\/.*)|("(?:[^"\\]|\\.)*")|(#include\s*<[^>]+>)|\b(const|void|bool|unsigned|long|uint8_t|if|true|false|HIGH|LOW|OUTPUT)\b|\b(pinMode|digitalWrite|delay|millis|begin|println)\b|\b(\d+)\b/g,
+          cls: ['t-com', 't-str', 't-pre', 't-kw', 't-fn', 't-num'] },
+  json: { re: /("(?:[^"\\]|\\.)*")(\s*:)?|\b(true|false|null)\b|(-?\b\d+\b)/g,
+          cls: ['t-str', '', 't-kw', 't-num'] },
+  ini:  { re: /(^\[.*\]$)|(^\w+)(?=\s*=)|('[^']*'|"[^"]*")|(\b\d+\b)/gm,
+          cls: ['t-pre', 't-key', 't-str', 't-num'] }
+};
+function highlight(text, lang) {
+  const rule = RULES[lang === 'toml' ? 'ini' : lang];
+  const re = new RegExp(rule.re.source, rule.re.flags);
+  let out = '', last = 0, m;
+  while ((m = re.exec(text))) {
+    if (m[0] === '') { re.lastIndex++; continue; }
+    out += esc(text.slice(last, m.index));
+    if (lang === 'json' && m[1] !== undefined && m[2] !== undefined) {
+      out += `<span class="t-key">${esc(m[1])}</span>${esc(m[2])}`;
+    } else {
+      let cls = '';
+      for (let i = 1; i < m.length; i++) if (m[i] !== undefined) { cls = rule.cls[i - 1]; break; }
+      out += `<span class="${cls}">${esc(m[0])}</span>`;
+    }
+    last = re.lastIndex;
+  }
+  return out + esc(text.slice(last));
+}
+
+let current = 'home';
+let timer = null, running = true, ledOn = false, tickCount = 0, serialLines = [], activeTab = 0, files = [];
+let params = {};
+
+/* ---------- tema ---------- */
+(function initTheme() {
+  const t = store.get('lab.theme');
+  if (t) document.documentElement.setAttribute('data-theme', t);
+  $('#themeBtn').onclick = () => {
+    const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+    const now = document.documentElement.getAttribute('data-theme') || (dark ? 'dark' : 'light');
+    const next = now === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    store.set('lab.theme', next);
+  };
+})();
+
+/* ---------- placas (página principal) ---------- */
+const BOARDS = {
+  uno: {
+    id: 'uno', letter: 'U', cls: 'uno', name: 'Arduino Uno R3', short: 'Arduino Uno', mcu: 'ATmega328P · 5 V',
+    tagline: 'A placa para aprender os fundamentos',
+    chips: ['AVR 8 bits', '16 MHz', 'lógica 5 V', '2 KB de RAM', 'sem Wi-Fi'],
+    about: [
+      'O Arduino Uno é uma placa baseada no microcontrolador ATmega328P, um chip de 8 bits que executa um programa por vez, em loop, sem sistema operacional. Você escreve em C/C++ (com as funções do Arduino, como <code>digitalWrite</code> e <code>analogRead</code>) e o programa fica gravado na memória flash.',
+      'Ele trabalha com 5 V, a mesma tensão do USB, então conversa direto com a maioria dos LEDs, botões, sensores e shields clássicos. Como tem poucos recursos (16 MHz e 2 KB de RAM), ele obriga você a entender o que cada linha faz. Por isso é o ponto de partida desta trilha.',
+      'Pense na placa como uma central de entradas e saídas: ela lê sinais (botões, potenciômetros, sensores), decide o que fazer e comanda saídas (LEDs, motores, displays).'
+    ],
+    specs: [
+      ['Microcontrolador', 'ATmega328P (AVR de 8 bits)'], ['Clock', '16 MHz'], ['Tensão lógica', '5 V'],
+      ['Alimentação', 'USB ou 7–12 V no conector P4'], ['Memória flash', '32 KB (0,5 KB do bootloader)'], ['SRAM', '2 KB'],
+      ['EEPROM', '1 KB'], ['Pinos digitais', '14 (D0–D13)'], ['Entradas analógicas', '6 (A0–A5), ADC de 10 bits'],
+      ['PWM', '6 pinos: 3, 5, 6, 9, 10, 11'], ['Comunicação', '1 UART, I2C e SPI'], ['Wi-Fi / Bluetooth', 'não tem']
+    ],
+    pins: [
+      ['Serial (UART)', 'D0 (RX) e D1 (TX), compartilhados com o USB'], ['I2C', 'A4 (SDA) e A5 (SCL)'],
+      ['SPI', 'D10 (SS), D11 (MOSI), D12 (MISO), D13 (SCK)'], ['PWM (~)', 'D3, D5, D6, D9, D10, D11'],
+      ['Interrupções externas', 'D2 e D3'], ['LED interno', 'D13']
+    ],
+    attention: [
+      'Cada pino aguenta no máximo 40 mA (absoluto); trabalhe com até 20 mA. Por isso o LED sempre leva resistor.',
+      'D0 e D1 são usados pelo USB/Serial. Evite-os em projetos que usam o Serial Monitor.',
+      'A lógica é de 5 V. Ligar uma saída de 5 V diretamente em uma placa de 3,3 V (Pico, ESP32) pode danificá-la.',
+      'Só 2 KB de RAM: evite muitos textos e vetores grandes. Prefira <code>F("texto")</code> e tipos pequenos.'
+    ],
+    pros: ['Simples e muito documentada', 'Compatível com shields e sensores de 5 V', 'Suporte completo no Wokwi', 'Pinos resistentes'],
+    cons: ['Pouca memória e processamento', 'Sem Wi-Fi nem Bluetooth', 'ADC de apenas 10 bits', 'Uma UART, dividida com o USB'],
+    use: 'Aprender eletrônica e programação embarcada; projetos com LEDs, botões, sensores, displays e motores.',
+    extra: 'Família: o Mega 2560 tem mais pinos e memória (54 digitais e 8 KB de RAM) e o Nano usa o mesmo chip do Uno em formato pequeno. O que você aprende aqui vale para eles.',
+    config: {
+      ini: '[env:uno]\nplatform = atmelavr\nboard = uno\nframework = arduino\nmonitor_speed = 9600\n',
+      toml: "[wokwi]\nversion = 1\nfirmware = '.pio/build/uno/firmware.hex'\nelf = '.pio/build/uno/firmware.elf'\n",
+      part: '{ "type": "wokwi-arduino-uno", "id": "uno", "top": 0, "left": 0, "attrs": {} }',
+      note: 'Esta é a configuração usada nos projetos 01 a 03 e já testada no projeto 01.'
+    },
+    projects: ['01', '02', '03', '04', '05']
+  },
+  pico: {
+    id: 'pico', letter: 'P', cls: 'pico', name: 'Raspberry Pi Pico / Pico W', short: 'Raspberry Pi Pico', mcu: 'RP2040 · 3,3 V',
+    tagline: 'Rápida, barata e com recursos únicos (PIO)',
+    chips: ['2× Cortex-M0+', '133 MHz', 'lógica 3,3 V', '264 KB de RAM', 'Wi-Fi só no Pico W'],
+    about: [
+      'O Raspberry Pi Pico usa o RP2040, um microcontrolador criado pela própria Raspberry Pi Foundation, com dois núcleos ARM Cortex-M0+ de 32 bits (até 133 MHz) e 264 KB de RAM. Ele não é um mini computador: como o Uno, roda um único programa, sem sistema operacional, mas com muito mais velocidade e memória.',
+      'O grande diferencial é o PIO (Programmable I/O): 8 máquinas de estado programáveis que geram protocolos próprios (como o dos LEDs WS2812) sem ocupar a CPU. Todos os pinos trabalham a 3,3 V.',
+      'Existe também o Pico W, com Wi-Fi de 2,4 GHz e Bluetooth. Você pode programar em C/C++ (Pico SDK), em MicroPython ou no estilo Arduino. Nesta trilha usaremos o estilo Arduino para manter o código parecido com o do Uno.'
+    ],
+    specs: [
+      ['Microcontrolador', 'RP2040 (dual-core ARM Cortex-M0+)'], ['Clock', 'até 133 MHz (125 MHz por padrão)'], ['Tensão lógica', '3,3 V (não tolera 5 V)'],
+      ['Alimentação', 'USB ou 1,8–5,5 V no pino VSYS'], ['Memória flash', '2 MB (externa, QSPI)'], ['SRAM', '264 KB'],
+      ['GPIO', '26 pinos multifuncionais'], ['Entradas analógicas', '3 externas (GP26–GP28), ADC de 12 bits, mais sensor de temperatura interno'], ['PWM', '16 canais, em qualquer GPIO'],
+      ['Comunicação', '2× UART, 2× I2C, 2× SPI, USB 1.1'], ['PIO', '8 máquinas de estado'], ['Wi-Fi / Bluetooth', 'apenas no Pico W']
+    ],
+    pins: [
+      ['UART0 (padrão)', 'GP0 (TX) e GP1 (RX)'], ['I2C0 (padrão)', 'GP4 (SDA) e GP5 (SCL)'],
+      ['SPI0 (padrão)', 'GP16 (MISO), GP18 (SCK), GP19 (MOSI)'], ['Entradas analógicas', 'GP26 (ADC0), GP27 (ADC1), GP28 (ADC2)'],
+      ['PWM', 'qualquer GPIO (16 canais compartilhados em pares)'], ['LED interno', 'GP25 no Pico; no Pico W é controlado pelo chip Wi-Fi']
+    ],
+    attention: [
+      'Os pinos são de 3,3 V e não toleram 5 V. Para ligar sensores de 5 V, use divisor de tensão ou conversor de nível.',
+      'Só 3 pinos analógicos externos (GP26 a GP28), e o ADC é ruidoso.',
+      'Para usar o framework Arduino no PlatformIO é preciso um núcleo da comunidade (Earle Philhower); a configuração é um pouco mais manual que a do Uno.',
+      'Na gravação por USB, o Pico entra em modo de armazenamento (BOOTSEL) e recebe um arquivo .uf2.'
+    ],
+    pros: ['Barata e rápida', 'Muita RAM para o preço', 'PIO para protocolos customizados', 'Ótimo suporte a MicroPython'],
+    cons: ['Lógica de 3,3 V', 'Poucas entradas analógicas', 'Sem Wi-Fi no modelo comum', 'Configuração Arduino menos direta'],
+    use: 'Projetos que pedem velocidade, controle em tempo real ou protocolos especiais; aprender o mundo ARM de 32 bits com custo baixo.',
+    extra: 'Dica: se você já domina o Uno, o Pico é o próximo passo natural. O código muda pouco; o que muda é a tensão (3,3 V) e a numeração dos pinos (GP).',
+    config: {
+      ini: '[env:pico]\nplatform = https://github.com/maxgerhardt/platform-raspberrypi.git\nboard = pico\nframework = arduino\nboard_build.core = earlephilhower\nmonitor_speed = 115200\n',
+      toml: "[wokwi]\nversion = 1\nfirmware = '.pio/build/pico/firmware.uf2'\nelf = '.pio/build/pico/firmware.elf'\n",
+      part: '{ "type": "wokwi-pi-pico", "id": "pico", "top": 0, "left": 0, "attrs": {} }',
+      note: 'Modelo de configuração, ainda não testado. Será validado no projeto 06.'
+    },
+    projects: ['06']
+  },
+  esp32: {
+    id: 'esp32', letter: 'E', cls: 'esp', name: 'ESP32 (DevKit)', short: 'ESP32', mcu: 'Xtensa LX6 · 3,3 V',
+    tagline: 'Wi-Fi e Bluetooth prontos para IoT',
+    chips: ['2× Xtensa 32 bits', '240 MHz', 'lógica 3,3 V', '520 KB de RAM', 'Wi-Fi + Bluetooth'],
+    about: [
+      'O ESP32 é um microcontrolador da Espressif com dois núcleos Xtensa de 32 bits (até 240 MHz) e Wi-Fi de 2,4 GHz mais Bluetooth (clássico e BLE) integrados. Em placas como a DevKit, tudo já vem pronto: porta USB, regulador de 3,3 V e os botões EN (reset) e BOOT.',
+      'Por baixo roda o FreeRTOS, que permite multitarefa de verdade, mas você pode programar no estilo Arduino (<code>setup</code> e <code>loop</code>) com as mesmas funções. É a escolha natural para IoT: servidor web, MQTT, sensores conectados e Bluetooth.',
+      'Há variantes como ESP32-S3 (mais periféricos e aceleração para IA) e ESP32-C3/C6 (núcleo RISC-V, mais baratas). Nesta trilha usamos o ESP32 clássico da DevKit.'
+    ],
+    specs: [
+      ['Microcontrolador', 'ESP32 (dual-core Xtensa LX6, 32 bits)'], ['Clock', 'até 240 MHz'], ['Tensão lógica', '3,3 V (não tolera 5 V)'],
+      ['Alimentação', 'USB (5 V) com regulador de 3,3 V na placa'], ['Memória flash', 'tipicamente 4 MB (varia por módulo)'], ['SRAM', '520 KB'],
+      ['GPIO', 'cerca de 34, com restrições'], ['Entradas analógicas', 'até 18 canais, ADC de 12 bits'], ['DAC', '2 canais de 8 bits (GPIO25 e GPIO26)'],
+      ['PWM', '16 canais (LEDC) em quase qualquer GPIO'], ['Comunicação', '3× UART, 2× I2C, SPI, I2S, CAN, toque capacitivo'], ['Wi-Fi / Bluetooth', 'Wi-Fi 2,4 GHz + Bluetooth/BLE']
+    ],
+    pins: [
+      ['I2C (padrão)', 'GPIO21 (SDA) e GPIO22 (SCL)'], ['SPI (VSPI)', 'GPIO18 (SCK), GPIO19 (MISO), GPIO23 (MOSI), GPIO5 (CS)'],
+      ['UART0 (USB)', 'GPIO1 (TX) e GPIO3 (RX)'], ['DAC', 'GPIO25 e GPIO26'],
+      ['Só entrada', 'GPIO34, 35, 36 e 39 (sem pull-up interno)'], ['LED interno', 'GPIO2 na maioria das DevKits']
+    ],
+    attention: [
+      'Os pinos são de 3,3 V e não toleram 5 V.',
+      'GPIO6 a GPIO11 ficam ligados à memória flash: não use.',
+      'Pinos de boot (strapping) como GPIO0, 2, 12 e 15 podem impedir a inicialização se estiverem no nível errado.',
+      'O ADC2 não funciona com o Wi-Fi ligado; para ler analógico com Wi-Fi, use pinos do ADC1 (GPIO32–39). O ADC também não é linear.',
+      'O Wi-Fi gera picos de corrente; use uma boa fonte/cabo USB para evitar reinícios.'
+    ],
+    pros: ['Wi-Fi e Bluetooth integrados', 'Rápido, com muita memória', 'Muitos periféricos (touch, DAC, I2S)', 'Barato e muito difundido'],
+    cons: ['Lógica de 3,3 V', 'Pinagem cheia de restrições', 'Consumo maior que o do Uno', 'Mais complexo para iniciantes'],
+    use: 'Projetos conectados (IoT): servidor web, MQTT, automação residencial, Bluetooth e coleta de dados na nuvem.',
+    extra: 'No Wokwi, o ESP32 simula Wi-Fi pela rede aberta “Wokwi-GUEST” (sem senha), o que permite testar servidor web e MQTT sem hardware.',
+    config: {
+      ini: '[env:esp32dev]\nplatform = espressif32\nboard = esp32dev\nframework = arduino\nmonitor_speed = 115200\n',
+      toml: "[wokwi]\nversion = 1\nfirmware = '.pio/build/esp32dev/firmware.bin'\nelf = '.pio/build/esp32dev/firmware.elf'\n",
+      part: '{ "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} }',
+      note: 'Modelo de configuração, ainda não testado. Será validado no projeto 07.'
+    },
+    projects: ['07', '08']
+  }
+};
+
+const COMPARE = [
+  ['Núcleo', 'AVR de 8 bits (1 núcleo)', 'ARM Cortex-M0+ (2 núcleos)', 'Xtensa LX6 (2 núcleos)'],
+  ['Clock', '16 MHz', 'até 133 MHz', 'até 240 MHz'],
+  ['Tensão lógica', '5 V', '3,3 V', '3,3 V'],
+  ['Memória flash', '32 KB', '2 MB (externa)', '≈ 4 MB (varia)'],
+  ['RAM', '2 KB', '264 KB', '520 KB'],
+  ['Pinos de E/S', '14 digitais + 6 analógicos', '26 GPIO', '≈ 34 GPIO'],
+  ['ADC', '10 bits, 6 canais', '12 bits, 3 canais', '12 bits, até 18 canais'],
+  ['PWM', '6 pinos', '16 canais (qualquer GPIO)', '16 canais (quase qualquer GPIO)'],
+  ['Wi-Fi / Bluetooth', 'não', 'só no Pico W', 'sim (Wi-Fi + BLE)'],
+  ['Ideal para', 'aprender fundamentos', 'velocidade e PIO', 'IoT e conectividade'],
+  ['Peça no Wokwi', 'wokwi-arduino-uno', 'wokwi-pi-pico', 'board-esp32-devkit-c-v4']
+];
+
+/* ilustrações simples das placas */
+function boardArt(kind) {
+  if (kind === 'uno') {
+    const top = Array.from({ length: 14 }, (_, i) => `<rect x="${66 + i * 14}" y="24" width="7" height="7" fill="#d9b44a"/>`).join('');
+    const analog = Array.from({ length: 6 }, (_, i) => `<rect x="${200 + i * 14}" y="157" width="7" height="7" fill="#d9b44a"/>`).join('');
+    return `<svg viewBox="0 0 320 190" role="img" aria-label="Ilustração do Arduino Uno">
+      <rect x="12" y="34" width="296" height="124" rx="10" fill="#0b6e75"/>
+      <rect x="0" y="58" width="42" height="38" rx="3" fill="#b9c2cf"/><rect x="0" y="110" width="42" height="34" rx="3" fill="#1b1f27"/>
+      <rect x="170" y="78" width="100" height="30" rx="3" fill="#161a22"/><text x="220" y="97" text-anchor="middle" style="fill:#9fb0c6;font:9px ui-monospace,monospace">ATmega328P</text>
+      <circle cx="64" cy="64" r="9" fill="#c93c3c" stroke="#e8e8e8" stroke-width="2"/>
+      <text x="125" y="128" text-anchor="middle" style="fill:#e8fffd;font:700 14px system-ui;letter-spacing:.08em">ARDUINO UNO</text>
+      <rect x="60" y="20" width="210" height="15" rx="2" fill="#101419"/>${top}
+      <rect x="96" y="154" width="70" height="13" rx="2" fill="#101419"/><rect x="194" y="154" width="86" height="13" rx="2" fill="#101419"/>${analog}
+      <text x="165" y="13" text-anchor="middle" class="mut">pinos digitais D0–D13</text>
+      <text x="237" y="182" text-anchor="middle" class="mut">analógicos A0–A5</text>
+      <text x="131" y="182" text-anchor="middle" class="mut">alimentação</text>
+      <text x="21" y="52" text-anchor="middle" class="mut" style="font-size:9px">USB</text></svg>`;
+  }
+  if (kind === 'pico') {
+    const row = y => Array.from({ length: 20 }, (_, i) => `<circle cx="${40 + i * 12.7}" cy="${y}" r="3" fill="#d9b44a"/>`).join('');
+    return `<svg viewBox="0 0 320 190" role="img" aria-label="Ilustração do Raspberry Pi Pico">
+      <rect x="22" y="62" width="276" height="68" rx="6" fill="#1f7a45"/>${row(69)}${row(123)}
+      <rect x="8" y="84" width="30" height="24" rx="3" fill="#b9c2cf"/><text x="23" y="144" text-anchor="middle" class="mut" style="font-size:9px">USB</text>
+      <rect x="140" y="78" width="38" height="38" rx="3" fill="#151a22"/><text x="159" y="101" text-anchor="middle" style="fill:#9fb0c6;font:8px ui-monospace,monospace">RP2040</text>
+      <rect x="198" y="90" width="26" height="14" rx="2" fill="#2a303c"/>
+      <rect x="58" y="80" width="28" height="18" rx="3" fill="#e5e9f2"/><text x="72" y="92" text-anchor="middle" style="fill:#333;font:700 6px system-ui">BOOTSEL</text>
+      <circle cx="104" cy="106" r="3" fill="#7dff9a"/>
+      <text x="255" y="100" text-anchor="middle" style="fill:#e8fff0;font:700 9px system-ui">Raspberry Pi Pico</text>
+      <text x="160" y="46" text-anchor="middle" class="mut">26 GPIO · 3,3 V</text>
+      <text x="160" y="170" text-anchor="middle" class="mut">2 núcleos ARM · 8 máquinas PIO</text></svg>`;
+  }
+  const side = x => Array.from({ length: 15 }, (_, i) => `<rect x="${x}" y="${52 + i * 7.6}" width="6" height="5" fill="#d9b44a"/>`).join('');
+  return `<svg viewBox="0 0 320 190" role="img" aria-label="Ilustração do ESP32 DevKit">
+    <rect x="86" y="10" width="148" height="168" rx="6" fill="#1d2129"/>${side(90)}${side(224)}
+    <rect x="108" y="14" width="104" height="70" rx="3" fill="#c9ced8"/>
+    <path d="M114 20 h20 v8 h-14 v8 h14 v8 h-14 v8 h20 M150 20 h20 v8 h-14 v8 h14 v8 h-14 v8 h20" fill="none" stroke="#7b7f88" stroke-width="2"/>
+    <text x="160" y="76" text-anchor="middle" style="fill:#333;font:700 8px ui-monospace,monospace">ESP32-WROOM-32</text>
+    <rect x="140" y="172" width="40" height="14" rx="2" fill="#b9c2cf"/>
+    <rect x="110" y="148" width="14" height="10" rx="2" fill="#e5e9f2"/><rect x="196" y="148" width="14" height="10" rx="2" fill="#e5e9f2"/>
+    <text x="117" y="168" text-anchor="middle" class="mut" style="font-size:8px">EN</text><text x="203" y="168" text-anchor="middle" class="mut" style="font-size:8px">BOOT</text>
+    <text x="74" y="40" text-anchor="end" class="mut">antena</text><text x="74" y="52" text-anchor="end" class="mut">Wi-Fi + BT</text>
+    <text x="246" y="105" class="mut">15 + 15</text><text x="246" y="117" class="mut">pinos</text></svg>`;
+}
+
+/* ---------- menu e rotas ---------- */
+function renderMenu() {
+  const boards = Object.values(BOARDS).map(b => `
+    <button class="step plain ${current === 'placa/' + b.id ? 'active' : ''}" data-href="#/placa/${b.id}">
+      <span class="dot b-${b.cls}">${b.letter}</span>
+      <span class="info"><b>${b.short}</b><small>${b.mcu}</small></span>
+    </button>`).join('');
+  const projects = PROJECTS.map(p => `
+    <button class="step ${p.status === 'ok' ? 'done' : ''} ${p.id === current ? 'active' : ''}" data-href="#/projeto/${p.id}">
+      <span class="dot">${p.status === 'ok' ? '✓' : p.id}</span>
+      <span class="info"><b>${p.title}</b><small>${p.board}${STATUS_TXT[p.status]}</small></span>
+    </button>`).join('');
+  $('#menu').innerHTML = `
+    <button class="step plain ${current === 'home' ? 'active' : ''}" data-href="#/"><span class="dot">⌂</span><span class="info"><b>Início</b><small>Visão geral e placas</small></span></button>
+    <h2 class="navh">Placas</h2>${boards}
+    <h2 class="navh">Trilha de projetos</h2>${projects}`;
+  document.querySelectorAll('.step').forEach(b => b.onclick = () => { location.hash = b.dataset.href; });
+}
+const STATUS_TXT = { ok: '', criado: ' · a testar', pendente: ' · em breve' };
+
+function leaveView() { if (sim) { sim.stop(); sim = null; } proj = null; }
+
+function route() {
+  const [kind, id] = location.hash.replace(/^#\/?/, '').split('/');
+  leaveView();
+  if (kind === 'placa' && BOARDS[id]) { current = 'placa/' + id; renderMenu(); showBoard(BOARDS[id]); }
+  else if (kind === 'projeto' && PROJECTS.some(p => p.id === id)) { current = id; openProject(); }
+  else { current = 'home'; renderMenu(); showHome(); }
+  window.scrollTo({ top: 0 });
+}
+
+function statusBadge(p) {
+  const t = p.status === 'ok' ? 'testado' : p.status === 'criado' ? 'a testar' : 'em breve';
+  return `<span class="badge ${p.status}">${t}</span>`;
+}
+
+function showHome() {
+  const cards = Object.values(BOARDS).map(b => `
+    <a class="bcard" href="#/placa/${b.id}">
+      <div class="bart">${boardArt(b.id)}</div>
+      <div class="bbody"><span class="chip board ${b.cls}">${b.short}</span>
+        <h3>${b.tagline}</h3><p>${b.use}</p>
+        <div class="chips">${b.chips.map(c => `<span class="chip">${c}</span>`).join('')}</div>
+        <span class="more">Ver explicação completa →</span></div>
+    </a>`).join('');
+  const table = `<div class="tblwrap"><table class="tbl"><thead><tr><th></th><th>Arduino Uno</th><th>Raspberry Pi Pico</th><th>ESP32</th></tr></thead><tbody>${
+    COMPARE.map(r => `<tr><th scope="row">${r[0]}</th><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</tbody></table></div>`;
+  const trail = PROJECTS.map(p => `
+    <a class="trow" href="#/projeto/${p.id}"><span class="num">${p.id}</span>
+      <span class="ttl"><b>${p.title}</b><small>${p.summary}</small></span>
+      <span class="chip board ${p.boardClass}">${p.board}</span>${statusBadge(p)}</a>`).join('');
+  $('#view').innerHTML = `
+    <section class="hero big">
+      <div class="hero-top"><span class="num">LABORATÓRIO EMBARCADOS</span></div>
+      <h2>Aprenda eletrônica embarcada na prática</h2>
+      <p>Estude <b>Arduino</b>, <b>Raspberry Pi Pico</b> e <b>ESP32</b> com projetos progressivos, simulados no <b>Wokwi</b> dentro do VS Code. Cada projeto tem circuito, código, explicação e parâmetros que você pode alterar aqui no site.</p>
+      <div class="cta"><a class="btn primary" href="#/projeto/01">Começar pelo projeto 01</a><button class="btn" onclick="document.getElementById('placas').scrollIntoView({behavior:'smooth'})">Conhecer as placas</button></div>
+    </section>
+
+    <h3 class="sec" id="placas">As placas</h3>
+    <p class="lead">Escolha uma placa para ver como ela funciona, seus pinos, cuidados e como configurá-la no PlatformIO e no Wokwi.</p>
+    <div class="bcards">${cards}</div>
+
+    <h3 class="sec">Comparativo rápido</h3>
+    ${table}
+    <p class="note">Regra prática: comece pelo <b>Uno</b> para dominar os fundamentos; use o <b>Pico</b> quando precisar de mais velocidade; use o <b>ESP32</b> quando o projeto precisar de Wi-Fi ou Bluetooth. Atenção: Pico e ESP32 trabalham com 3,3 V, enquanto o Uno trabalha com 5 V.</p>
+
+    <h3 class="sec">Como o estudo funciona</h3>
+    <div class="flow">
+      <div class="fstep"><b>1 · Código</b><span>Você escreve C/C++ no VS Code (<code>main.cpp</code>).</span></div>
+      <div class="farrow">→</div>
+      <div class="fstep"><b>2 · PlatformIO</b><span>Compila e gera o firmware (<code>.hex</code>, <code>.bin</code> ou <code>.uf2</code>).</span></div>
+      <div class="farrow">→</div>
+      <div class="fstep"><b>3 · Wokwi</b><span>Lê o <code>diagram.json</code>, monta o circuito virtual e executa o firmware.</span></div>
+    </div>
+    <p class="note">Pré-requisitos no VS Code: extensões <b>PlatformIO IDE</b> e <b>Wokwi Simulator</b>. Abra a pasta do projeto (não a pasta-pai) para as duas encontrarem os arquivos.</p>
+
+    <h3 class="sec">Trilha de projetos</h3>
+    <div class="trail">${trail}</div>`;
+}
+
+function showBoard(b) {
+  const blocks = [['platformio.ini', 'ini', b.config.ini], ['wokwi.toml', 'toml', b.config.toml], ['diagram.json (peça da placa)', 'json', b.config.part]];
+  boardBlocks = blocks.map(x => x[2]);
+  const related = b.projects.map(id => PROJECTS.find(p => p.id === id)).map(p => `
+    <a class="trow" href="#/projeto/${p.id}"><span class="num">${p.id}</span><span class="ttl"><b>${p.title}</b><small>${p.summary}</small></span>${statusBadge(p)}</a>`).join('');
+  $('#view').innerHTML = `
+    <section class="hero board">
+      <div class="hero-text">
+        <div class="hero-top"><a class="crumb" href="#/">← Início</a><span class="chip board ${b.cls}">${b.short}</span></div>
+        <h2>${b.name}</h2><p>${b.tagline}.</p>
+        <div class="chips">${b.chips.map(c => `<span class="chip concept">${c}</span>`).join('')}</div>
+      </div>
+      <div class="hero-art">${boardArt(b.id)}</div>
+    </section>
+
+    <div class="card"><h3>O que é</h3>${b.about.map(t => `<p class="prose">${t}</p>`).join('')}<p class="prose"><b>Quando usar:</b> ${b.use}</p></div>
+
+    <div class="grid2">
+      <div class="card"><h3>Especificações</h3><dl class="specs">${b.specs.map(s => `<dt>${s[0]}</dt><dd>${s[1]}</dd>`).join('')}</dl></div>
+      <div class="card"><h3>Pinos e periféricos importantes</h3><dl class="specs">${b.pins.map(s => `<dt>${s[0]}</dt><dd>${s[1]}</dd>`).join('')}</dl></div>
+    </div>
+
+    <div class="card callout"><h3>Pontos de atenção</h3><ul class="clean warn">${b.attention.map(t => `<li>${t}</li>`).join('')}</ul></div>
+
+    <div class="grid2">
+      <div class="card"><h3>Pontos fortes</h3><ul class="clean good">${b.pros.map(t => `<li>${t}</li>`).join('')}</ul></div>
+      <div class="card"><h3>Limitações</h3><ul class="clean bad">${b.cons.map(t => `<li>${t}</li>`).join('')}</ul></div>
+    </div>
+    <p class="note">${b.extra}</p>
+
+    <div class="card"><h3>Configuração no PlatformIO e no Wokwi</h3>
+      <p class="note" style="margin-top:0">${b.config.note}</p>
+      ${blocks.map((x, i) => `<div class="blk"><div class="blkhead"><code>${x[0]}</code><button class="btn" data-blk="${i}">Copiar</button></div><pre>${highlight(x[2], x[1])}</pre></div>`).join('')}
+    </div>
+
+    <div class="card"><h3>Projetos desta placa</h3><div class="trail">${related}</div></div>`;
+  document.querySelectorAll('[data-blk]').forEach(btn => btn.onclick = async () => {
+    try { await navigator.clipboard.writeText(boardBlocks[Number(btn.dataset.blk)]); btn.textContent = 'Copiado!'; } catch (e) { btn.textContent = 'Use Ctrl+C'; }
+    setTimeout(() => btn.textContent = 'Copiar', 1500);
+  });
+}
+let boardBlocks = [];
+
+function heroHtml(p) {
+  return `<section class="hero">
+    <div class="hero-top"><span class="num">PROJETO ${p.id}</span><span class="chip board ${p.boardClass}">${p.board}</span><span class="chip">pasta: ${p.slug}</span></div>
+    <h2>${p.title}</h2><p>${p.summary}</p>
+    <div class="chips">${p.concepts.map(c => `<span class="chip concept">${c}</span>`).join('')}</div></section>`;
+}
+
+/* ---------- auxiliares de simulação ---------- */
+function stamp(ms, text) { return `<em>[${String(Math.round(ms)).padStart(6, ' ')} ms]</em> ${text}`; }
+function showSerial(lines) {
+  const box = $('#serial'); if (!box) return;
+  box.innerHTML = lines ? lines.join('\n') : '<em>(Serial desativado no código)</em>';
+  box.scrollTop = box.scrollHeight;
+}
+function setPill(text, high) { const s = $('#state'); if (!s) return; s.textContent = text; s.className = 'pill' + (high ? ' high' : ''); }
+function mulberry32(a) {
+  return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+function stepPath(v0, trans, yH, yL, x, W) {
+  let d = `M${x(0)} ${v0 ? yH : yL}`, cur = v0;
+  for (const e of trans) { d += ` H${x(e.t)}`; if (e.v !== cur) { d += ` V${e.v ? yH : yL}`; cur = e.v; } }
+  return d + ` H${x(W)}`;
+}
+
+/* Simula um aperto ou uma soltura de botão com bounce e o filtro de debounce do código gerado. */
+function simulateEdge(p, dir, rnd) {
+  const from = dir === 'press' ? 1 : 0, to = 1 - from, deb = p.debounce, start = 1;
+  const raw = [{ t: start, v: to }];
+  if (p.bounce > 0) {
+    const pairs = 1 + Math.floor(rnd() * 3), times = [];
+    for (let i = 0; i < pairs * 2; i++) times.push(start + 0.2 + rnd() * p.bounce);
+    times.sort((a, b) => a - b);
+    times.forEach((t, i) => raw.push({ t, v: i % 2 === 0 ? from : to }));
+  }
+  const lastRaw = raw[raw.length - 1].t, W = lastRaw + deb + 8;
+  const rawAt = t => { let v = from; for (const e of raw) { if (e.t <= t) v = e.v; else break; } return v; };
+  let ant = from, est = from, ultima = 0; const acc = [];
+  for (let t = 0; t <= W; t += 0.2) {
+    const m = Math.floor(t), lei = rawAt(t);
+    if (lei !== ant) { ant = lei; ultima = m; }
+    if (m - ultima >= deb && lei !== est) { est = lei; acc.push({ t, v: est }); }
+  }
+  return { dir, from, to, raw, acc, W, lastRaw };
+}
+
+/* ---------- projeto ---------- */
+let proj = null, sim = null;
+const METER_HTML = `
+  <div style="font-size:12px;color:var(--muted)">Corrente no LED</div>
+  <div class="meter"><i class="z-low" style="width:12.5%"></i><i class="z-ok" style="width:37.5%"></i><i class="z-hi" style="width:50%"></i></div>
+  <div class="needle-wrap"><div class="needle" id="needle"></div></div>
+  <div class="ticks"><span style="left:0;transform:none">0</span><span style="left:12.5%">5</span><span style="left:50%">20</span><span style="right:0;transform:none">40 mA</span></div>`;
+
+function openProject() {
+  if (sim) { sim.stop(); sim = null; }
+  renderMenu();
+  proj = PROJECTS.find(p => p.id === current);
+  if (!proj.params) { renderPending(proj); return; }
+  params = Object.assign({}, proj.defaults, store.get('lab.params.' + proj.id) || {});
+  activeTab = 0;
+
+  $('#view').innerHTML = heroHtml(proj) + `
+    <div class="grid">
+      <div class="sticky">
+        <div class="card"><h3>Parâmetros</h3><div id="controls"></div>
+          <button class="btn" id="reset">↺ Restaurar padrões</button></div>
+        <div class="card"><h3>Cálculos</h3><div class="stats" id="stats"></div>${proj.meter ? METER_HTML : ''}<div id="alert"></div></div>
+      </div>
+      <div>
+        <div class="card"><h3>Circuito <span class="pill" id="state"></span></h3>
+          <div class="stage" id="circuit"></div><div class="statebar" id="actions"></div></div>
+        <div class="card"><h3>${proj.waveTitle}</h3><div class="stage" id="wave"></div></div>
+        <div class="card"><h3>Monitor serial (simulado)</h3>
+          <div class="term"><div class="term-bar"><i></i><i></i><i></i><span>Serial · 9600 baud</span></div><div class="serial" id="serial"></div></div></div>
+      </div>
+    </div>
+    <div class="card"><h3>Arquivos para a pasta ${proj.slug}</h3>
+      <div class="tabs" id="tabs"></div><pre id="code"></pre>
+      <div class="actions"><button class="btn primary" id="copy">Copiar arquivo</button><button class="btn" id="download">Baixar arquivo</button>
+      <span class="ok-msg" id="copied"></span></div>
+      <p class="note">Cole cada arquivo na pasta do projeto e recompile (<code>Ctrl+Alt+B</code>). Mudou algum pino, resistor ou cor? Atualize também o <code>diagram.json</code>.</p></div>
+    <div class="grid">
+      <div class="card"><h3>Experimentos</h3><ul class="clean">${proj.experiments.map(c => `<li>${c}</li>`).join('')}</ul></div>
+      <div class="card"><h3>Perguntas de verificação</h3>${proj.quiz.map(q => `<details><summary>${q[0]}</summary><p>${q[1]}</p></details>`).join('')}</div>
+    </div>`;
+
+  buildControls();
+  $('#reset').onclick = () => { params = Object.assign({}, proj.defaults); store.set('lab.params.' + proj.id, params); buildControls(); update(); };
+  $('#copy').onclick = async () => {
+    try { await navigator.clipboard.writeText(files[activeTab].text); $('#copied').textContent = 'Copiado!'; }
+    catch (e) { $('#copied').textContent = 'Selecione o texto e use Ctrl+C.'; }
+    setTimeout(() => $('#copied').textContent = '', 1800);
+  };
+  $('#download').onclick = () => {
+    const f = files[activeTab]; const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([f.text], { type: 'text/plain' }));
+    a.download = f.name.split('/').pop(); a.click(); URL.revokeObjectURL(a.href);
+  };
+  sim = proj.createSim();
+  $('#actions').innerHTML = sim.actionsHtml;
+  sim.bind();
+  update();
+}
+
+function renderPending(p) {
+  $('#view').innerHTML = heroHtml(p) + `
+    <div class="card pending"><div class="big">🛠️</div><p><b>Projeto ainda não criado.</b></p>
+    <p>Peça ao Claude: “vamos para o ${p.id}”. Ele gera o projeto e acrescenta a página interativa aqui.</p></div>`;
+}
+
+function buildControls() {
+  $('#controls').innerHTML = proj.params.map(d => {
+    const v = params[d.key];
+    let input;
+    if (d.type === 'range') input = `<input type="range" id="p_${d.key}" min="${d.min}" max="${d.max}" step="${d.step}" value="${v}">`;
+    else if (d.type === 'select') input = `<select id="p_${d.key}">${d.options.map(o => `<option value="${o.v}" ${String(o.v) === String(v) ? 'selected' : ''}>${o.t}</option>`).join('')}</select>`;
+    else input = `<span class="check"><input type="checkbox" id="p_${d.key}" ${v ? 'checked' : ''}> ativar</span>`;
+    return `<div class="field"><label for="p_${d.key}"><span>${d.label}${d.simOnly ? ' <span class="tag">só simulação</span>' : ''}</span>${d.type === 'range' ? `<span class="val" id="v_${d.key}">${v}${d.unit}</span>` : ''}</label>${input}${d.hint ? `<div class="hint">${d.hint}</div>` : ''}</div>`;
+  }).join('');
+  proj.params.forEach(d => {
+    const el = $('#p_' + d.key);
+    el.oninput = el.onchange = () => {
+      let v = d.type === 'check' ? el.checked : el.value;
+      if (d.type === 'range') { v = Number(v); $('#v_' + d.key).textContent = v + d.unit; }
+      else if (d.type === 'select' && !isNaN(Number(v))) v = Number(v);
+      params[d.key] = v; store.set('lab.params.' + proj.id, params); update(d.key);
+    };
+  });
+}
+
+function renderCode() {
+  $('#tabs').innerHTML = files.map((f, i) => `<button class="tab ${i === activeTab ? 'active' : ''}" data-i="${i}">${f.name}</button>`).join('');
+  document.querySelectorAll('.tab').forEach(b => b.onclick = () => { activeTab = Number(b.dataset.i); renderCode(); });
+  $('#code').innerHTML = highlight(files[activeTab].text, files[activeTab].lang);
+}
+
+function update(key) {
+  const d = proj.derive(params);
+  $('#stats').innerHTML = d.stats.map(s => `<div class="stat"><b>${s[0]}</b><span>${s[1]}</span></div>`).join('');
+  if (proj.meter) $('#needle').style.left = Math.min(d.i, 40) / 40 * 100 + '%';
+  $('#alert').innerHTML = `<div class="alert ${d.level}">${d.msg}</div>`;
+  files = proj.files(params);
+  renderCode();
+  sim.onParams(key);
+}
+
+/* Altera um parâmetro por código (ex.: arrastar o potenciômetro) e mantém os controles sincronizados. */
+function setParam(key, v) {
+  if (v === null || v === undefined) return;
+  params[key] = v;
+  const el = $('#p_' + key); if (el) el.value = v;
+  const lab = $('#v_' + key), d = proj.params.find(x => x.key === key);
+  if (lab && d) lab.textContent = v + (d.unit || '');
+  store.set('lab.params.' + proj.id, params);
+  update(key);
+}
+
+window.addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>

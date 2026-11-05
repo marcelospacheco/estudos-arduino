@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador Blink Uno</title>
+<style>
+/* Layout: barra de status no topo; circuito clicável + inspetor de componente; abaixo código, serial e formas de onda. */
+:root{
+  --bg:#e9ece6; --panel:#fafaf6; --ink:#18201c; --muted:#5b6862; --line:#d3d9d1;
+  --accent:#d6402f; --accent-ink:#fff; --code:#f1f2ec; --hl:#ffe7a0;
+  --board:#0f6b73; --board-dk:#0a4a50; --wire:#2f7d4f; --gnd:#4b524e; --gold:#d9c27a;
+  --ok:#2c7a4b; --warn:#c2410c; --bad:#b91c1c; --sel:#2563eb;
+  --mono:Consolas,"Cascadia Mono","SF Mono",Menlo,monospace; --sans:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#111613; --panel:#19211d; --ink:#e6ece8; --muted:#94a49b; --line:#2b3832;
+  --accent:#ff6552; --accent-ink:#1a0805; --code:#131a16; --hl:#4b4112;
+  --board:#14808a; --board-dk:#0d5a61; --wire:#5fc08a; --gnd:#9aa7a0; --gold:#d9c27a;
+  --ok:#5fc08a; --warn:#fb923c; --bad:#f87171; --sel:#60a5fa; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans);padding:20px max(16px,env(safe-area-inset-right)) 40px max(16px,env(safe-area-inset-left))}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between}
+h1{margin:0;font-size:clamp(22px,3.5vw,30px);line-height:1.15;letter-spacing:-.01em}
+.sub{margin:2px 0 0;color:var(--muted);font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{font:500 13px var(--mono);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 12px;display:inline-flex;gap:6px;align-items:center}
+.dot{width:10px;height:10px;border-radius:50%;background:#777;display:inline-block}
+.dot.on{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+button{font:500 14px var(--sans);border:1px solid var(--ink);background:var(--ink);color:var(--bg);padding:6px 14px;border-radius:6px;cursor:pointer}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+button.ghost:hover{border-color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--sel);outline-offset:2px}
+
+.main{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr);gap:14px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;min-width:0}
+.ph{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 10px;font:600 12px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+svg{display:block;width:100%;height:auto}
+.hint{font-size:13px;color:var(--muted);margin:8px 0 0}
+
+/* circuito */
+.part{cursor:pointer}
+.part .ring{fill:none;stroke:var(--sel);stroke-width:2;stroke-dasharray:6 4;opacity:0}
+.part.sel .ring{opacity:1}
+.part:hover .ring{opacity:.45}
+.part.sel:hover .ring{opacity:1}
+.flow{stroke:var(--accent);stroke-width:3;fill:none;stroke-dasharray:2 14;stroke-linecap:round;animation:flow 1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-16}}
+@media (prefers-reduced-motion:reduce){.flow{animation:none}}
+svg text{font-family:var(--mono)}
+
+/* inspetor */
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tab{flex:1;background:var(--code);color:var(--ink);border:1px solid var(--line);font-weight:600;padding:8px 6px}
+.tab.sel{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.field{margin:0 0 14px}
+.field>label,.field>.lab{display:flex;justify-content:space-between;align-items:baseline;font-weight:600;font-size:14px;margin-bottom:5px}
+.field small{color:var(--muted);font-weight:400}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=number],select{font:inherit;font-family:var(--mono);width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--code);color:var(--ink)}
+.numrow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.numrow span{font-family:var(--mono);color:var(--muted)}
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.presets button{padding:3px 10px;font:500 13px var(--mono)}
+.presets button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.sw{display:flex;flex-wrap:wrap;gap:8px}
+.sw label{cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;padding:6px 8px;border:2px solid var(--line);border-radius:8px;min-width:62px}
+.sw input{position:absolute;opacity:0;pointer-events:none}
+.sw label:has(input:checked){border-color:var(--ink)}
+.sw label:has(input:focus-visible){outline:2px solid var(--sel)}
+.sw i{width:22px;height:22px;border-radius:50%;display:block;box-shadow:inset 0 -3px 4px rgba(0,0,0,.25)}
+.chk{display:flex;gap:9px;align-items:flex-start;margin:0 0 10px;font-size:14px;cursor:pointer}
+.chk input{margin-top:4px}
+.mono{font-family:var(--mono)}
+.note{font-size:13px;color:var(--muted);margin:0}
+
+/* leituras */
+.read{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.read div{background:var(--code);border-radius:6px;padding:8px 11px}
+.read b{display:block;font:600 19px var(--mono)}
+.read span{font-size:12px;color:var(--muted)}
+.read .w b{color:var(--warn)} .read .d b{color:var(--bad)}
+.calc{margin-top:10px;font:14px/1.7 var(--mono);background:var(--code);border-radius:6px;padding:9px 12px;overflow-x:auto}
+.calc .k{color:var(--muted)}
+#banner{margin:10px 0 0;padding:9px 12px;border-radius:6px;font-size:14px;border:1px solid var(--line);background:var(--code)}
+#banner.ok{border-color:var(--ok)} #banner.warn{border-color:var(--warn)} #banner.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--code))}
+
+/* código / serial */
+.low{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+pre.code{margin:0;font:13px/1.7 var(--mono);background:var(--code);border-radius:6px;padding:8px 0;overflow-x:auto}
+.ln{display:block;padding:0 12px 0 6px;white-space:pre;border-left:3px solid transparent}
+.ln.on{background:var(--hl);border-left-color:var(--accent)}
+.ln i{display:inline-block;width:2.2em;color:var(--muted);font-style:normal;user-select:none}
+.ln .cm{color:var(--muted)}
+#serial{height:240px;overflow-y:auto;background:#0b0f0d;color:#9be8b4;font:13px/1.55 var(--mono);border-radius:6px;padding:8px 10px}
+#serial div{white-space:pre}
+#serial .t{color:#5b7a69}
+.wavepanel{grid-column:1/-1}
+@media(max-width:900px){.main,.low{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Simulador Blink Uno</h1>
+      <p class="sub">Clique em um componente do circuito (ou na aba ao lado) e altere o valor. O código e os cálculos acompanham.</p>
+    </div>
+    <div class="chips">
+      <span class="chip"><span class="dot" id="dot"></span><span id="chipPin">D13 = LOW</span></span>
+      <span class="chip" id="chipI">0 mA</span>
+      <span class="chip" id="chipHz">1,00 Hz</span>
+      <button id="pp">Pausar</button>
+      <button class="ghost" id="rst">Reiniciar placa</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <section class="panel">
+      <p class="ph"><span>Circuito</span><span id="selName">Selecionado: Resistor</span></p>
+      <svg id="circuit" viewBox="0 0 760 350" role="img" aria-label="Circuito: pino digital, resistor, LED e GND"></svg>
+      <p class="hint">Os pontos animados mostram o sentido da corrente (do pino, passando pelo resistor e pelo LED, até o GND). Quanto maior a corrente, mais rápidos.</p>
+      <div id="banner"></div>
+    </section>
+
+    <aside class="panel">
+      <p class="ph"><span>Inspetor</span></p>
+      <div class="tabs" role="tablist">
+        <button class="tab" data-sel="board" role="tab">Arduino</button>
+        <button class="tab" data-sel="res" role="tab">Resistor</button>
+        <button class="tab" data-sel="led" role="tab">LED</button>
+      </div>
+      <div id="insp"></div>
+    </aside>
+  </div>
+
+  <section class="panel">
+    <p class="ph"><span>Cálculos (lei de Ohm) com o pino em HIGH</span></p>
+    <div class="read" id="read"></div>
+    <div class="calc" id="calc"></div>
+  </section>
+
+  <div class="low">
+    <section class="panel">
+      <p class="ph"><span>main.cpp</span><span id="phase">setup()</span></p>
+      <pre class="code" id="code"></pre>
+    </section>
+    <section class="panel">
+      <p class="ph"><span>Monitor serial · 9600 baud</span><button class="ghost" id="clr" style="padding:2px 9px;font-size:12px">Limpar</button></p>
+      <div id="serial"></div>
+    </section>
+    <section class="panel wavepanel">
+      <p class="ph"><span>Formas de onda</span><span id="winLbl"></span></p>
+      <svg id="wave" viewBox="0 0 1100 190" role="img" aria-label="Tensão no pino e corrente no LED ao longo do tempo"></svg>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var VCC=5, IMAX=20, IPIN_MAX=40, R_RATING=250 /* 1/4 W em mW */, RPULL=35000;
+  var LEDS={
+    red:{n:'Vermelho',vf:2.0,c:'#ff2a2a'}, yellow:{n:'Amarelo',vf:2.1,c:'#ffd21a'},
+    green:{n:'Verde',vf:2.2,c:'#22e05c'}, blue:{n:'Azul',vf:3.0,c:'#3d7cff'}, white:{n:'Branco',vf:3.1,c:'#eef2ff'}
+  };
+  var E12=[1.0,1.2,1.5,1.8,2.2,2.7,3.3,3.9,4.7,5.6,6.8,8.2], E12VALS=[];
+  [10,100,1000,10000].forEach(function(d){E12.forEach(function(m){E12VALS.push(Math.round(m*d))})}); E12VALS.push(100000);
+  var PRESETS=[100,220,330,470,1000,4700,10000];
+
+  var st={pin:13, iv:500, R:220, led:'red', rev:false, usePinMode:true, sel:'res',
+          level:0, paused:false, t0:performance.now(), hist:[], timer:null, idx:0};
+  var $=function(id){return document.getElementById(id)};
+  var NS='http://www.w3.org/2000/svg';
+  function num(x,d){return x.toLocaleString('pt-BR',{minimumFractionDigits:d==null?0:d,maximumFractionDigits:d==null?1:d})}
+  function fmtR(r){if(r>=1e6)return num(r/1e6,2)+' MΩ'; if(r>=1000)return num(r/1000,r%1000?2:0).replace(/,?0+ /,' ')+' kΩ'; return num(r,r<10?1:0)+' Ω'}
+  function now(){return performance.now()-st.t0}
+
+  /* ---------- modelo elétrico ---------- */
+  function model(level){
+    var led=LEDS[st.led], high=level===1;
+    var weak=high && !st.usePinMode;                  // pino ainda é entrada: só o pull-up interno
+    var Rt=Math.max(st.R,0.5)+(weak?RPULL:0);
+    var vdrive=high?VCC:0;
+    var I=(!high||st.rev)?0:Math.max(0,(vdrive-led.vf)/Rt*1000);   // mA
+    var VR=I/1000*st.R, PR=I*I*st.R/1000, PL=I*led.vf;               // V, mW, mW
+    return {led:led,high:high,weak:weak,I:I,VR:VR,PR:PR,PL:PL,Rt:Rt};
+  }
+  function minSafeR(){var l=LEDS[st.led]; return (VCC-l.vf)/IMAX*1000}
+  function nextE12(r){for(var i=0;i<E12VALS.length;i++){if(E12VALS[i]>=r)return E12VALS[i]} return E12VALS[E12VALS.length-1]}
+  function nearestIdx(r){var b=0,d=1e18;E12VALS.forEach(function(v,i){var x=Math.abs(Math.log(v/Math.max(r,1)));if(x<d){d=x;b=i}});return b}
+
+  /* ---------- faixas do resistor ---------- */
+  var DIG=['#1b1b1b','#7a4a1e','#d62828','#f77f00','#f6d31c','#2e9e3a','#2a62d1','#8b46c4','#8a8a8a','#f4f4f4'];
+  function bands(r){
+    if(r<=0)return ['#1b1b1b'];
+    var e=Math.floor(Math.log10(r)), d=Math.round(r/Math.pow(10,e)*10);
+    if(d>=100){d=10;e++}
+    var m=e-1; var mc=m>=0?DIG[Math.min(m,9)]:(m===-1?'#c9a227':'#b8b8b8');
+    return [DIG[Math.floor(d/10)],DIG[d%10],mc,'#c9a227'];
+  }
+
+  /* ---------- desenho do circuito ---------- */
+  var circ=$('circuit');
+  function px(pin){return 70+(pin-8)*26}
+  function drawCircuit(){
+    var m=model(1), mNow=model(st.level), on=mNow.I>0.02;
+    var b=Math.min(1,mNow.I/IMAX), bright=on?(0.35+0.65*Math.pow(b,.7)):0;
+    var x=px(st.pin), c=LEDS[st.led].c, bs=bands(st.R);
+    var s='';
+    s+='<defs><radialGradient id="gl"><stop offset="0" stop-color="'+c+'" stop-opacity="1"/><stop offset="1" stop-color="'+c+'" stop-opacity="0"/></radialGradient></defs>';
+    /* fios */
+    var wD='M'+x+' 176 V110 H312';
+    var wG='M228 176 V140 H610 V110 H548';
+    s+='<path d="'+wD+'" fill="none" stroke="var(--wire)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+    s+='<path d="M388 110 H478" fill="none" stroke="var(--wire)" stroke-width="4" stroke-linecap="round"/>';
+    s+='<path d="'+wG+'" fill="none" stroke="var(--gnd)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+    if(on){
+      var dur=Math.max(.25,1.6-1.4*b).toFixed(2);
+      s+='<path class="flow" style="animation-duration:'+dur+'s" d="M'+x+' 176 V110 H478 M478 110 H520"/>';
+      s+='<path class="flow" style="animation-duration:'+dur+'s" d="M548 110 H610 V140 H228 V176"/>';
+    }
+    /* placa */
+    s+='<g class="part'+(st.sel==='board'?' sel':'')+'" data-sel="board" tabindex="0" role="button" aria-label="Arduino Uno">';
+    s+='<rect x="30" y="170" width="300" height="160" rx="8" fill="var(--board)" stroke="var(--board-dk)" stroke-width="3"/>';
+    s+='<text x="180" y="262" text-anchor="middle" fill="#fff" font-size="26" font-weight="700" style="font-family:var(--sans)">ARDUINO UNO</text>';
+    s+='<text x="180" y="284" text-anchor="middle" fill="#cde9ec" font-size="11">ATmega328P · 5 V · 16 MHz</text>';
+    s+='<rect x="52" y="170" width="190" height="14" fill="var(--board-dk)"/>';
+    for(var p=8;p<=13;p++){var sel=p===st.pin;
+      s+='<circle cx="'+px(p)+'" cy="177" r="'+(sel?6:4.5)+'" fill="'+(sel?'var(--accent)':'var(--gold)')+'"/>';
+      s+='<text x="'+px(p)+'" y="203" text-anchor="middle" font-size="11" fill="'+(sel?'#fff':'#cde9ec')+'" font-weight="'+(sel?700:400)+'">D'+p+'</text>';}
+    s+='<circle cx="228" cy="177" r="4.5" fill="var(--gold)"/><text x="228" y="203" text-anchor="middle" font-size="11" fill="#cde9ec">GND</text>';
+    s+='<circle cx="302" cy="305" r="6" fill="'+(st.pin===13&&on?c:'#2b4b4e')+'" stroke="#0a3a3f"/><text x="302" y="322" text-anchor="middle" font-size="9" fill="#cde9ec">L</text>';
+    s+='<rect class="ring" x="22" y="162" width="316" height="176" rx="10"/></g>';
+    /* resistor */
+    s+='<g class="part'+(st.sel==='res'?' sel':'')+'" data-sel="res" tabindex="0" role="button" aria-label="Resistor">';
+    s+='<path d="M312 110 H330 M370 110 H388" stroke="var(--wire)" stroke-width="4"/>';
+    s+='<rect x="324" y="94" width="52" height="32" rx="9" fill="#d8c29a" stroke="#8f7a52" stroke-width="1.5"/>';
+    var bx=[334,344,354,366]; bs.forEach(function(col,i){ if(bs.length===1){s+='<rect x="345" y="94" width="8" height="32" fill="'+col+'"/>'} else s+='<rect x="'+bx[i]+'" y="94" width="6" height="32" fill="'+col+'"/>'});
+    s+='<text x="350" y="76" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)">'+fmtR(st.R)+'</text>';
+    s+='<text x="350" y="148" text-anchor="middle" font-size="12" fill="'+(on?'var(--accent)':'var(--muted)')+'">'+(on?('Vr = '+num(mNow.VR,2)+' V'):'sem queda')+'</text>';
+    s+='<rect class="ring" x="296" y="64" width="108" height="96" rx="8"/></g>';
+    /* LED */
+    s+='<g class="part'+(st.sel==='led'?' sel':'')+'" data-sel="led" tabindex="0" role="button" aria-label="LED">';
+    s+='<path d="M478 110 H500 M530 110 H548" stroke="var(--wire)" stroke-width="4"/>';
+    if(on)s+='<circle cx="514" cy="110" r="'+(34+46*b)+'" fill="url(#gl)" opacity="'+Math.min(1,bright*1.15).toFixed(2)+'"/>';
+    var fx=st.rev?'scale(-1,1) translate(-1028,0)':'';
+    s+='<g transform="'+fx+'"><path d="M496 90 V130 L534 110 Z" fill="'+(on?c:'var(--panel)')+'" fill-opacity="'+(on?(0.55+0.45*b).toFixed(2):1)+'" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/><path d="M536 90 V130" stroke="var(--ink)" stroke-width="3"/></g>';
+    s+='<path d="M512 82 l12 -14 m-5 0 h5 v5 M526 88 l12 -14 m-5 0 h5 v5" stroke="'+c+'" stroke-width="2" fill="none" stroke-linecap="round" opacity="'+(on?1:.55)+'"/>';
+    s+='<text x="514" y="52" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)">LED '+LEDS[st.led].n.toLowerCase()+'</text>';
+    s+='<text x="514" y="152" text-anchor="middle" font-size="12" fill="'+(on?'var(--accent)':'var(--muted)')+'">'+(on?('Vf = '+num(LEDS[st.led].vf,1)+' V'):'apagado')+'</text>';
+    s+='<text x="488" y="106" text-anchor="end" font-size="11" fill="var(--muted)">A</text><text x="544" y="106" font-size="11" fill="var(--muted)">C</text>';
+    s+='<rect class="ring" x="470" y="38" width="88" height="124" rx="8"/></g>';
+    /* rótulos */
+    s+='<text x="'+(x-8)+'" y="132" font-size="12" fill="'+(mNow.high?'var(--accent)':'var(--muted)')+'" font-weight="700">'+(mNow.high?'5 V':'0 V')+'</text>';
+    s+='<text x="560" y="168" font-size="12" fill="var(--muted)">0 V (GND)</text>';
+    if(on)s+='<text x="428" y="100" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent)">'+num(mNow.I,mNow.I<10?1:0)+' mA</text>';
+    circ.innerHTML=s;
+  }
+
+  /* ---------- inspetor ---------- */
+  var insp=$('insp');
+  function drawInspector(){
+    document.querySelectorAll('.tab').forEach(function(t){var on=t.dataset.sel===st.sel;t.classList.toggle('sel',on);t.setAttribute('aria-selected',on)});
+    $('selName').textContent='Selecionado: '+({board:'Arduino',res:'Resistor',led:'LED'})[st.sel];
+    var h='';
+    if(st.sel==='res'){
+      var idx=nearestIdx(st.R);
+      h+='<div class="field"><label for="rNum">Resistência <small>faixas coloridas acompanham</small></label>'+
+         '<div class="numrow"><input type="number" id="rNum" min="0" max="1000000" step="any" value="'+st.R+'"><span>Ω</span></div>'+
+         '<input type="range" id="rSl" min="0" max="'+(E12VALS.length-1)+'" value="'+idx+'" aria-label="Valores padrão E12" style="margin-top:8px">'+
+         '<div class="presets">'+PRESETS.map(function(v){return '<button class="ghost'+(v===st.R?' on':'')+'" data-r="'+v+'">'+fmtR(v)+'</button>'}).join('')+'</div></div>';
+      var ms=minSafeR(), ne=nextE12(ms);
+      h+='<div class="field"><div class="lab">Valor mínimo seguro</div><p class="note">Para limitar a '+IMAX+' mA com LED '+LEDS[st.led].n.toLowerCase()+': R ≥ ('+VCC+' − '+num(LEDS[st.led].vf,1)+') ÷ 0,020 = <b class="mono">'+num(ms,0)+' Ω</b>. Valor comercial: <b class="mono">'+fmtR(ne)+'</b>.</p><div class="presets"><button class="ghost" id="useMin">Usar '+fmtR(ne)+'</button></div></div>';
+      h+='<p class="note">Teste 0 Ω (sem resistor) e veja a corrente passar do limite de 20 mA do LED e de 40 mA do pino.</p>';
+    }else if(st.sel==='led'){
+      h+='<div class="field"><div class="lab">Cor do LED <small>define a queda de tensão Vf</small></div><div class="sw">'+
+        Object.keys(LEDS).map(function(k){var l=LEDS[k];return '<label><input type="radio" name="lc" value="'+k+'"'+(k===st.led?' checked':'')+'><i style="background:'+l.c+'"></i>'+l.n+'<small class="mono">'+num(l.vf,1)+' V</small></label>'}).join('')+'</div></div>';
+      h+='<label class="chk"><input type="checkbox" id="rev"'+(st.rev?' checked':'')+'><span>Inverter a polaridade <small style="color:var(--muted)">(ânodo e cátodo trocados)</small></span></label>';
+      h+='<p class="note">O LED é um diodo: só conduz com o ânodo (A) mais positivo que o cátodo (C). O limite recomendado é '+IMAX+' mA. LEDs azul e branco têm Vf maior, então para o mesmo resistor passam menos corrente.</p>';
+    }else{
+      h+='<div class="field"><label for="pinSel">Pino do LED <small>PINO_LED</small></label><select id="pinSel">'+[8,9,10,11,12,13].map(function(p){return '<option value="'+p+'"'+(p===st.pin?' selected':'')+'>D'+p+(p===13?' (LED da placa)':'')+'</option>'}).join('')+'</select></div>';
+      h+='<div class="field"><label for="ivNum">Intervalo <small>INTERVALO_MS</small></label>'+
+         '<div class="numrow"><input type="number" id="ivNum" min="20" max="5000" step="10" value="'+st.iv+'"><span>ms</span></div>'+
+         '<input type="range" id="ivSl" min="20" max="2000" step="10" value="'+Math.min(st.iv,2000)+'" aria-label="Intervalo" style="margin-top:8px"></div>';
+      h+='<label class="chk"><input type="checkbox" id="pm"'+(st.usePinMode?' checked':'')+'><span>Incluir <span class="mono">pinMode(PINO_LED, OUTPUT)</span></span></label>';
+      h+='<p class="note">Sem o <span class="mono">pinMode</span> o pino continua como entrada. <span class="mono">digitalWrite(HIGH)</span> só liga o pull-up interno (~35 kΩ) e o LED quase não acende.</p>';
+    }
+    insp.innerHTML=h;
+    wireInspector();
+  }
+  function setR(v){v=Math.max(0,Math.min(1e6,+v||0)); st.R=v; refresh(false)}
+  function wireInspector(){
+    var q=function(id){return $(id)};
+    if(q('rNum')){
+      q('rNum').addEventListener('input',function(e){setR(e.target.value); q('rSl').value=nearestIdx(st.R); markPresets()});
+      q('rSl').addEventListener('input',function(e){var v=E12VALS[+e.target.value]; q('rNum').value=v; setR(v); markPresets()});
+      insp.querySelectorAll('[data-r]').forEach(function(b){b.addEventListener('click',function(){var v=+b.dataset.r;q('rNum').value=v;q('rSl').value=nearestIdx(v);setR(v);markPresets()})});
+      q('useMin').addEventListener('click',function(){var v=nextE12(minSafeR());st.R=v;refresh(true)});
+    }
+    insp.querySelectorAll('input[name=lc]').forEach(function(r){r.addEventListener('change',function(){st.led=r.value;refresh(true)})});
+    if(q('rev'))q('rev').addEventListener('change',function(e){st.rev=e.target.checked;refresh(false)});
+    if(q('pinSel'))q('pinSel').addEventListener('change',function(e){st.pin=+e.target.value;refresh(false);buildCode()});
+    if(q('ivNum')){
+      q('ivNum').addEventListener('input',function(e){setIv(e.target.value);q('ivSl').value=Math.min(st.iv,2000)});
+      q('ivSl').addEventListener('input',function(e){q('ivNum').value=e.target.value;setIv(e.target.value)});
+    }
+    if(q('pm'))q('pm').addEventListener('change',function(e){st.usePinMode=e.target.checked;refresh(false);buildCode()});
+  }
+  function markPresets(){insp.querySelectorAll('[data-r]').forEach(function(b){b.classList.toggle('on',+b.dataset.r===st.R)})}
+  function setIv(v){v=Math.max(20,Math.min(5000,Math.round(+v)||500)); st.iv=v; buildCode(); refresh(false)}
+
+  function select(k){st.sel=k; drawInspector(); drawCircuit()}
+  document.addEventListener('pointerdown',function(e){var t=e.target.closest&&e.target.closest('[data-sel]'); if(t&&(t.closest('#circuit')||t.classList.contains('tab'))) select(t.dataset.sel)});
+  circ.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){var t=e.target.closest('[data-sel]'); if(t){e.preventDefault();select(t.dataset.sel)}}});
+
+  /* ---------- leituras / cálculos ---------- */
+  function drawReadings(){
+    var m=model(1), l=m.led;
+    var cls=function(v,w,d){return v>=d?'d':(v>=w?'w':'')};
+    var cards=[
+      ['Corrente no LED',num(m.I,m.I<10?2:1)+' mA',cls(m.I,IMAX+.5,IPIN_MAX)],
+      ['Queda no resistor',num(m.VR,2)+' V',''],
+      ['Queda no LED (Vf)',num(l.vf,1)+' V',''],
+      ['Potência no resistor',num(m.PR,1)+' mW',m.PR>R_RATING?'d':(m.PR>R_RATING*.7?'w':'')],
+      ['Potência no LED',num(m.PL,1)+' mW',''],
+      ['Brilho relativo',Math.round(Math.min(1,m.I/IMAX)*100)+' %','']
+    ];
+    $('read').innerHTML=cards.map(function(c){return '<div class="'+c[2]+'"><b>'+c[1]+'</b><span>'+c[0]+'</span></div>'}).join('');
+    var R=st.R===0?'0':num(st.R,st.R<10?1:0), Rt=m.weak?(num(st.R+RPULL,0)):R;
+    var h='<span class="k">I  =  (Vcc − Vf) ÷ R</span>';
+    h+='<br>I  =  ('+num(VCC,1)+' − '+num(l.vf,1)+') ÷ '+(m.weak?'('+R+' + 35000)':R)+' Ω  =  <b>'+num(m.I,2)+' mA</b>';
+    h+='<br><span class="k">Vr = I × R</span>  =  '+num(m.I/1000,4)+' A × '+R+' Ω  =  '+num(m.VR,2)+' V';
+    h+='<br><span class="k">P  = I² × R</span>  =  '+num(m.PR,1)+' mW  <span class="k">(resistor de 1/4 W aguenta 250 mW)</span>';
+    if(st.rev)h+='<br><span class="k">LED invertido: corrente = 0 mA</span>';
+    $('calc').innerHTML=h;
+  }
+  function drawBanner(){
+    var m=model(1), b=$('banner'), t, c;
+    if(st.rev){c='warn';t='O LED está invertido, por isso a corrente é zero e ele nunca acende. O LED só conduz com o ânodo ligado ao lado positivo.'}
+    else if(m.weak){c='warn';t='Sem pinMode(OUTPUT) o pino segue como entrada. Só o pull-up interno (~35 kΩ) alimenta o LED, com cerca de '+num(m.I,2)+' mA. Ele quase não acende.'}
+    else if(m.I>=IPIN_MAX){c='bad';t='Perigo: '+num(m.I,0)+' mA passariam pelo pino, acima do máximo absoluto de 40 mA do ATmega328P. Na prática o pino ou o LED queimariam. Aumente o resistor.'}
+    else if(m.I>IMAX+.5){c='warn';t='Atenção: '+num(m.I,0)+' mA é mais que os 20 mA recomendados para o LED. Ele esquenta e perde vida útil. Use pelo menos '+fmtR(nextE12(minSafeR()))+'.'}
+    else if(m.PR>R_RATING){c='bad';t='O resistor dissiparia '+num(m.PR,0)+' mW, acima dos 250 mW de um resistor de 1/4 W.'}
+    else if(m.I<1.5){c='warn';t='Seguro, mas só '+num(m.I,2)+' mA: o brilho fica muito fraco. Diminua o resistor.'}
+    else {c='ok';t='Circuito dentro dos limites: '+num(m.I,1)+' mA no LED. Boa faixa para um LED comum fica entre 5 e 20 mA.'}
+    b.className=c; b.textContent=t;
+  }
+  function drawChips(){
+    var mNow=model(st.level);
+    $('dot').classList.toggle('on',mNow.I>0.02);
+    $('chipPin').textContent='D'+st.pin+' = '+(st.level?'HIGH':'LOW');
+    $('chipI').textContent=num(mNow.I,1)+' mA';
+    $('chipHz').textContent=num(1000/(2*st.iv),2)+' Hz · ciclo '+(2*st.iv)+' ms';
+  }
+  function refresh(withInspector){
+    // registra mudança de corrente na onda
+    st.hist.push({t:now(),v:st.level,i:model(st.level).I});
+    drawCircuit(); drawReadings(); drawBanner(); drawChips();
+    if(withInspector)drawInspector();
+  }
+
+  /* ---------- código ---------- */
+  var codeEl=$('code'), lines=[], tag={};
+  function buildCode(){
+    var L=[
+      ['#include <Arduino.h>',''],['',''],
+      ['const uint8_t PINO_LED = '+st.pin+';',''],
+      ['const unsigned long INTERVALO_MS = '+st.iv+';',''],['',''],
+      ['void setup() {','st'],
+      [st.usePinMode?'  pinMode(PINO_LED, OUTPUT);':'  // pinMode(PINO_LED, OUTPUT);  <- removido','pm'],
+      ['  Serial.begin(9600);','sb'],
+      ['  Serial.println("Blink iniciado!");','s0'],['}',''],['',''],
+      ['void loop() {',''],
+      ['  digitalWrite(PINO_LED, HIGH);','hi'],
+      ['  Serial.println("LED ligado");','s1'],
+      ['  delay(INTERVALO_MS);','d1'],
+      ['  digitalWrite(PINO_LED, LOW);','lo'],
+      ['  Serial.println("LED desligado");','s2'],
+      ['  delay(INTERVALO_MS);','d2'],['}','']
+    ];
+    var cur=null; var o=codeEl.querySelector('.on'); if(o)cur=o.dataset.tag;
+    codeEl.innerHTML=''; lines=[]; tag={};
+    L.forEach(function(c,i){var s=document.createElement('span');s.className='ln';var n=document.createElement('i');n.textContent=i+1;s.appendChild(n);
+      var tx=document.createElement('span'); tx.textContent=c[0]; if(c[0].indexOf('//')>=0)tx.className='cm'; s.appendChild(tx);
+      if(c[1]){s.dataset.tag=c[1];tag[c[1]]=s} codeEl.appendChild(s); lines.push(s)});
+    if(cur&&tag[cur])tag[cur].classList.add('on');
+  }
+  function hl(t){lines.forEach(function(l){l.classList.remove('on')}); if(tag[t])tag[t].classList.add('on')}
+
+  /* ---------- serial ---------- */
+  var ser=$('serial');
+  function say(txt){var d=document.createElement('div'),t=document.createElement('span');t.className='t';
+    t.textContent=String(Math.round(now())).padStart(6,' ')+' ms  ';d.appendChild(t);d.appendChild(document.createTextNode(txt));ser.appendChild(d);
+    while(ser.children.length>80)ser.removeChild(ser.firstChild); ser.scrollTop=ser.scrollHeight}
+
+  /* ---------- execução do programa ---------- */
+  function setLevel(v){st.level=v; refresh(false)}
+  function steps(){return [
+    {tag:'hi',ph:'loop(): HIGH',run:function(){setLevel(1)},wait:60},
+    {tag:'s1',ph:'loop(): Serial',run:function(){say('LED ligado')},wait:2},
+    {tag:'d1',ph:'delay('+st.iv+')',run:function(){},wait:st.iv},
+    {tag:'lo',ph:'loop(): LOW',run:function(){setLevel(0)},wait:60},
+    {tag:'s2',ph:'loop(): Serial',run:function(){say('LED desligado')},wait:2},
+    {tag:'d2',ph:'delay('+st.iv+')',run:function(){},wait:st.iv}]}
+  function tick(){
+    if(st.paused)return;
+    var S=steps(), s=S[st.idx%S.length]; hl(s.tag); $('phase').textContent=s.ph; s.run();
+    st.idx=(st.idx+1)%S.length;
+    st.timer=setTimeout(tick,s.wait);
+  }
+  function start(){
+    clearTimeout(st.timer); st.t0=performance.now(); st.hist=[]; st.level=0; st.idx=0; ser.innerHTML='';
+    refresh(false); buildCode(); hl('pm'); $('phase').textContent='setup()';
+    st.timer=setTimeout(function(){hl('s0');say('Blink iniciado!');st.timer=setTimeout(tick,300)},300);
+  }
+
+  /* ---------- formas de onda ---------- */
+  var wave=$('wave');
+  function drawWave(){
+    var T=now(), W=Math.max(3000,st.iv*5), L=60, Rr=1090, w=Rr-L;
+    var X=function(t){return L+(t-(T-W))/W*w};
+    var h=st.hist; if(h.length>600){st.hist=h=h.slice(-300)}
+    var s='';
+    // grades horizontais e rótulos
+    var Y5=22,Y0=78, IY0=170, IYM=112, Imax=Math.max(IMAX,model(1).I);
+    var YI=function(i){return IY0-(i/Imax)*(IY0-IYM)};
+    s+='<line x1="'+L+'" x2="'+Rr+'" y1="'+Y5+'" y2="'+Y5+'" stroke="var(--line)"/><line x1="'+L+'" x2="'+Rr+'" y1="'+Y0+'" y2="'+Y0+'" stroke="var(--line)"/>';
+    s+='<line x1="'+L+'" x2="'+Rr+'" y1="'+IY0+'" y2="'+IY0+'" stroke="var(--line)"/><line x1="'+L+'" x2="'+Rr+'" y1="'+YI(IMAX)+'" y2="'+YI(IMAX)+'" stroke="var(--warn)" stroke-dasharray="4 4" opacity=".6"/>';
+    s+='<text x="6" y="'+(Y5+4)+'" font-size="12" fill="var(--muted)">5 V</text><text x="6" y="'+(Y0+4)+'" font-size="12" fill="var(--muted)">0 V</text>';
+    s+='<text x="6" y="'+(YI(IMAX)+4)+'" font-size="12" fill="var(--warn)">20 mA</text><text x="6" y="'+(IY0+4)+'" font-size="12" fill="var(--muted)">0 mA</text>';
+    s+='<text x="'+L+'" y="12" font-size="12" fill="var(--ink)" font-weight="700">Tensão em D'+st.pin+'</text><text x="'+L+'" y="104" font-size="12" fill="var(--ink)" font-weight="700">Corrente no LED</text>';
+    var pv=[],pi=[];
+    for(var k=0;k<h.length;k++){
+      var a=h[k], nx=k+1<h.length?h[k+1].t:T; if(nx<T-W)continue;
+      var t0=Math.max(a.t,T-W), x0=X(t0).toFixed(1), x1=X(nx).toFixed(1);
+      pv.push(x0+','+(a.v?Y5:Y0), x1+','+(a.v?Y5:Y0));
+      pi.push(x0+','+YI(a.i).toFixed(1), x1+','+YI(a.i).toFixed(1));
+    }
+    if(pv.length){
+      s+='<polyline points="'+pv.join(' ')+'" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>';
+      s+='<polygon points="'+pi.join(' ')+' '+pi[pi.length-1].split(',')[0]+','+IY0+' '+pi[0].split(',')[0]+','+IY0+'" fill="var(--accent)" fill-opacity=".18"/>';
+      s+='<polyline points="'+pi.join(' ')+'" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>';
+    }
+    // marcas de tempo a cada segundo
+    var first=Math.ceil((T-W)/1000);
+    for(var sec=first;sec*1000<=T;sec++){var xx=X(sec*1000).toFixed(1);
+      s+='<line x1="'+xx+'" x2="'+xx+'" y1="'+IY0+'" y2="'+(IY0+5)+'" stroke="var(--muted)"/><text x="'+xx+'" y="'+(IY0+17)+'" text-anchor="middle" font-size="11" fill="var(--muted)">'+sec+' s</text>';}
+    wave.innerHTML=s;
+    $('winLbl').textContent='janela de '+num(W/1000,1)+' s';
+    requestAnimationFrame(drawWave);
+  }
+
+  /* ---------- controles globais ---------- */
+  $('pp').addEventListener('click',function(){
+    st.paused=!st.paused; $('pp').textContent=st.paused?'Continuar':'Pausar';
+    if(st.paused)clearTimeout(st.timer); else st.timer=setTimeout(tick,0)});
+  $('rst').addEventListener('click',function(){st.paused=false;$('pp').textContent='Pausar';start()});
+  $('clr').addEventListener('click',function(){ser.innerHTML=''});
+
+  drawInspector(); start(); drawWave();
+})();
+</script>
+</body>
+</html>
